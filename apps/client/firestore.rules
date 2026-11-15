@@ -1,0 +1,271 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isUniversityUser() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email is string
+        && request.auth.token.email.matches('^[A-Za-z0-9._%+-]+@uao\\.edu\\.co$');
+    }
+
+    function owns(uid) {
+      return isUniversityUser() && request.auth.uid == uid;
+    }
+
+    function roleIs(uid, role) {
+      return get(/databases/$(database)/documents/perfiles/$(uid)).data.rol == role;
+    }
+
+    function hasOnly(data, fields) {
+      return data.keys().hasOnly(fields);
+    }
+
+    function validName(value, minimum, maximum) {
+      return value is string && value.size() >= minimum && value.size() <= maximum;
+    }
+
+    function validPrivateProfile(uid, data) {
+      return data is map
+        && hasOnly(data, ['uid', 'nombre', 'correo', 'rol', 'creadoEn'])
+        && data.keys().hasAll(['uid', 'nombre', 'correo', 'rol', 'creadoEn'])
+        && data.uid == uid
+        && validName(data.nombre, 3, 100)
+        && data.correo == request.auth.token.email
+        && data.rol in ['estudiante', 'profesor']
+        && data.creadoEn is timestamp;
+    }
+
+    function validPublicProfile(uid, data) {
+      return data is map
+        && hasOnly(data, ['uid', 'nombre', 'creadoEn'])
+        && data.keys().hasAll(['uid', 'nombre', 'creadoEn'])
+        && data.uid == uid
+        && validName(data.nombre, 3, 100)
+        && data.creadoEn is timestamp;
+    }
+
+    function publicName(uid, name) {
+      return get(/databases/$(database)/documents/perfilesPublicos/$(uid)).data.nombre == name;
+    }
+
+    function validSlot(data) {
+      return data is map
+        && hasOnly(data, ['profesorId', 'profesorNombre', 'asignaturaId', 'asignaturaNombre', 'inicio', 'fin', 'reservado', 'tieneHistorial', 'activo', 'creadoEn', 'reservaId'])
+        && data.keys().hasAll(['profesorId', 'profesorNombre', 'asignaturaId', 'asignaturaNombre', 'inicio', 'fin', 'reservado', 'tieneHistorial', 'activo', 'creadoEn'])
+        && data.profesorId is string && data.profesorId.size() <= 128
+        && validName(data.profesorNombre, 3, 100)
+        && data.asignaturaId is string && data.asignaturaId.size() <= 150
+        && validName(data.asignaturaNombre, 1, 120)
+        && data.inicio is timestamp && data.fin is timestamp
+        && data.fin > data.inicio && data.inicio > request.time
+        && data.fin <= data.inicio + duration.value(2, 'h')
+        && data.reservado is bool && data.tieneHistorial is bool
+        && data.activo is bool && data.activo == true
+        && data.creadoEn is timestamp;
+    }
+
+    function professorOwnsSlot(data) {
+      return owns(data.profesorId) && roleIs(request.auth.uid, 'profesor');
+    }
+
+    function validBooking(data) {
+      return data is map
+        && hasOnly(data, ['horarioId', 'estudianteId', 'estudianteNombre', 'profesorId', 'profesorNombre', 'asignaturaId', 'asignaturaNombre', 'inicio', 'fin', 'estado', 'creadaEn', 'actualizadaEn'])
+        && data.keys().hasAll(['horarioId', 'estudianteId', 'estudianteNombre', 'profesorId', 'profesorNombre', 'asignaturaId', 'asignaturaNombre', 'inicio', 'fin', 'estado', 'creadaEn', 'actualizadaEn'])
+        && data.horarioId is string && data.horarioId.size() <= 150
+        && data.estudianteId is string && data.estudianteId.size() <= 128
+        && validName(data.estudianteNombre, 3, 100)
+        && data.profesorId is string && data.profesorId.size() <= 128
+        && validName(data.profesorNombre, 3, 100)
+        && data.asignaturaId is string && data.asignaturaId.size() <= 150
+        && validName(data.asignaturaNombre, 1, 120)
+        && data.inicio is timestamp && data.fin is timestamp && data.fin > data.inicio
+        && data.estado in ['pendiente', 'confirmada', 'cancelada', 'realizada']
+        && data.creadaEn is timestamp && data.actualizadaEn is timestamp;
+    }
+
+    match /perfiles/{uid} {
+      allow get: if owns(uid);
+      allow list: if false;
+
+      allow create: if owns(uid)
+        && validPrivateProfile(uid, request.resource.data)
+        && request.resource.data.rol == 'estudiante'
+        && request.resource.data.creadoEn == request.time
+        && getAfter(/databases/$(database)/documents/perfilesPublicos/$(uid)).data.nombre == request.resource.data.nombre;
+
+      allow update: if owns(uid)
+        && validPrivateProfile(uid, request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nombre'])
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.correo == resource.data.correo
+        && request.resource.data.rol == resource.data.rol
+        && request.resource.data.creadoEn == resource.data.creadoEn
+        && getAfter(/databases/$(database)/documents/perfilesPublicos/$(uid)).data.nombre == request.resource.data.nombre;
+      allow delete: if false;
+
+      match /asignaturas/{asignaturaId} {
+        allow get, list: if owns(uid);
+        allow create, update, delete: if false;
+      }
+
+      match /locks/horarios {
+        allow get: if owns(uid) && roleIs(uid, 'profesor');
+        allow list, delete: if false;
+        allow create, update: if owns(uid)
+          && roleIs(uid, 'profesor')
+          && request.resource.data.keys().hasOnly(['actualizadoEn', 'intervalos'])
+          && request.resource.data.keys().hasAll(['actualizadoEn', 'intervalos'])
+          && request.resource.data.actualizadoEn == request.time
+          && request.resource.data.intervalos is list
+          && request.resource.data.intervalos.size() <= 500;
+      }
+    }
+
+    match /perfilesPublicos/{uid} {
+      allow read: if isUniversityUser();
+      allow create: if owns(uid)
+        && validPublicProfile(uid, request.resource.data)
+        && request.resource.data.creadoEn == request.time
+        && getAfter(/databases/$(database)/documents/perfiles/$(uid)).data.nombre == request.resource.data.nombre;
+      allow update: if owns(uid)
+        && validPublicProfile(uid, request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nombre'])
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.creadoEn == resource.data.creadoEn
+        && getAfter(/databases/$(database)/documents/perfiles/$(uid)).data.nombre == request.resource.data.nombre;
+      allow delete: if false;
+    }
+
+    match /asignaturas/{asignaturaId} {
+      allow read: if isUniversityUser() && resource.data.activa == true;
+      allow create, update, delete: if false;
+    }
+
+    match /horarios/{horarioId} {
+      allow read: if isUniversityUser();
+
+      allow create: if isUniversityUser()
+        && roleIs(request.auth.uid, 'profesor')
+        && validSlot(request.resource.data)
+        && request.resource.data.profesorId == request.auth.uid
+        && publicName(request.auth.uid, request.resource.data.profesorNombre)
+        && get(/databases/$(database)/documents/asignaturas/$(request.resource.data.asignaturaId)).data.activa == true
+        && exists(/databases/$(database)/documents/perfiles/$(request.auth.uid)/asignaturas/$(request.resource.data.asignaturaId))
+        && request.resource.data.reservado == false
+        && request.resource.data.tieneHistorial == false
+        && request.resource.data.creadoEn == request.time
+        && getAfter(/databases/$(database)/documents/perfiles/$(request.auth.uid)/locks/horarios).data.actualizadoEn == request.time
+        && getAfter(/databases/$(database)/documents/perfiles/$(request.auth.uid)/locks/horarios).data.intervalos.hasAny([{
+          'horarioId': horarioId,
+          'inicio': request.resource.data.inicio,
+          'fin': request.resource.data.fin
+        }]);
+
+      // A slot and its booking must change atomically. This makes concurrent
+      // student reservations contend on the same slot document.
+      allow update: if isUniversityUser()
+        && resource.data.activo == true
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reservado', 'tieneHistorial', 'reservaId'])
+        && request.resource.data.profesorId == resource.data.profesorId
+        && request.resource.data.inicio == resource.data.inicio
+        && request.resource.data.fin == resource.data.fin
+        && request.resource.data.asignaturaId == resource.data.asignaturaId
+        && request.resource.data.profesorNombre == resource.data.profesorNombre
+        && request.resource.data.asignaturaNombre == resource.data.asignaturaNombre
+        && request.resource.data.activo == resource.data.activo
+        && request.resource.data.creadoEn == resource.data.creadoEn
+        && (
+          (
+            resource.data.reservado == false
+            && request.resource.data.reservado == true
+            && request.resource.data.tieneHistorial == true
+            && request.resource.data.reservaId is string
+            && getAfter(/databases/$(database)/documents/reservas/$(request.resource.data.reservaId)).data.horarioId == horarioId
+            && getAfter(/databases/$(database)/documents/reservas/$(request.resource.data.reservaId)).data.estudianteId == request.auth.uid
+            && getAfter(/databases/$(database)/documents/reservas/$(request.resource.data.reservaId)).data.estado == 'pendiente'
+          )
+          || (
+            resource.data.reservado == true
+            && resource.data.reservaId is string
+            && request.resource.data.reservado == false
+            && request.resource.data.reservaId == null
+            && request.resource.data.tieneHistorial == true
+            && getAfter(/databases/$(database)/documents/reservas/$(resource.data.reservaId)).data.estado == 'cancelada'
+            && (getAfter(/databases/$(database)/documents/reservas/$(resource.data.reservaId)).data.estudianteId == request.auth.uid
+              || getAfter(/databases/$(database)/documents/reservas/$(resource.data.reservaId)).data.profesorId == request.auth.uid)
+          )
+        );
+
+      allow delete: if professorOwnsSlot(resource.data)
+        && resource.data.reservado == false
+        && resource.data.tieneHistorial == false
+        && resource.data.inicio > request.time
+        && getAfter(/databases/$(database)/documents/perfiles/$(request.auth.uid)/locks/horarios).data.actualizadoEn == request.time
+        && !getAfter(/databases/$(database)/documents/perfiles/$(request.auth.uid)/locks/horarios).data.intervalos.hasAny([{
+          'horarioId': horarioId,
+          'inicio': resource.data.inicio,
+          'fin': resource.data.fin
+        }]);
+    }
+
+    match /reservas/{reservaId} {
+      allow read: if isUniversityUser()
+        && (resource.data.estudianteId == request.auth.uid || resource.data.profesorId == request.auth.uid);
+
+      allow create: if isUniversityUser()
+        && roleIs(request.auth.uid, 'estudiante')
+        && validBooking(request.resource.data)
+        && request.resource.data.estudianteId == request.auth.uid
+        && request.resource.data.estado == 'pendiente'
+        && request.resource.data.creadaEn == request.time
+        && request.resource.data.actualizadaEn == request.time
+        && publicName(request.auth.uid, request.resource.data.estudianteNombre)
+        && get(/databases/$(database)/documents/horarios/$(request.resource.data.horarioId)).data.reservado == false
+        && get(/databases/$(database)/documents/horarios/$(request.resource.data.horarioId)).data.activo == true
+        && get(/databases/$(database)/documents/horarios/$(request.resource.data.horarioId)).data.inicio > request.time
+        && getAfter(/databases/$(database)/documents/horarios/$(request.resource.data.horarioId)).data.reservado == true
+        && getAfter(/databases/$(database)/documents/horarios/$(request.resource.data.horarioId)).data.reservaId == reservaId
+        && getAfter(/databases/$(database)/documents/horarios/$(request.resource.data.horarioId)).data.profesorId == request.resource.data.profesorId
+        && getAfter(/databases/$(database)/documents/horarios/$(request.resource.data.horarioId)).data.asignaturaId == request.resource.data.asignaturaId
+        && getAfter(/databases/$(database)/documents/horarios/$(request.resource.data.horarioId)).data.inicio == request.resource.data.inicio
+        && getAfter(/databases/$(database)/documents/horarios/$(request.resource.data.horarioId)).data.fin == request.resource.data.fin;
+
+      allow update: if isUniversityUser()
+        && validBooking(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'actualizadaEn'])
+        && request.resource.data.actualizadaEn == request.time
+        && request.resource.data.horarioId == resource.data.horarioId
+        && request.resource.data.estudianteId == resource.data.estudianteId
+        && request.resource.data.profesorId == resource.data.profesorId
+        && request.resource.data.inicio == resource.data.inicio
+        && request.resource.data.fin == resource.data.fin
+        && (
+          (resource.data.estado == 'pendiente'
+            && request.resource.data.estado == 'confirmada'
+            && request.auth.uid == resource.data.profesorId
+            && roleIs(request.auth.uid, 'profesor')
+            && resource.data.inicio > request.time)
+          || (request.resource.data.estado == 'cancelada'
+            && resource.data.estado in ['pendiente', 'confirmada']
+            && resource.data.inicio > request.time
+            && ((request.auth.uid == resource.data.estudianteId && roleIs(request.auth.uid, 'estudiante'))
+              || (request.auth.uid == resource.data.profesorId && roleIs(request.auth.uid, 'profesor')))
+            && getAfter(/databases/$(database)/documents/horarios/$(resource.data.horarioId)).data.reservado == false
+            && getAfter(/databases/$(database)/documents/horarios/$(resource.data.horarioId)).data.reservaId == null)
+          || (resource.data.estado == 'confirmada'
+            && request.resource.data.estado == 'realizada'
+            && request.auth.uid == resource.data.profesorId
+            && roleIs(request.auth.uid, 'profesor')
+            && resource.data.fin <= request.time)
+        );
+
+      allow delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
