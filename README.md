@@ -2,10 +2,6 @@
 
 Aplicación móvil y web para conectar estudiantes y profesores de la Universidad Autónoma de Occidente. Está construida con React, Ionic, Capacitor y Firebase Authentication/Cloud Firestore. El proyecto no incluye servidor propio ni Cloud Functions.
 
-## Reconocimiento
-
-Esta versión parte del proyecto [Asesorías UAO original](https://github.com/Nicolas9990/AsesoriasUAO). El historial de `main` de ese repositorio registra sus commits iniciales a nombre de **DanielFerAcosta**. Esta copia traslada y organiza la aplicación con React, Ionic, Capacitor y Firebase.
-
 ## Estructura de la aplicación
 
 ```
