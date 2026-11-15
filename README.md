@@ -2,6 +2,10 @@
 
 Aplicación móvil y web para conectar estudiantes y profesores de la Universidad Autónoma de Occidente. Está construida con React, Ionic, Capacitor y Firebase Authentication/Cloud Firestore. El proyecto no incluye servidor propio ni Cloud Functions.
 
+## Reconocimiento
+
+Esta versión parte del proyecto [Asesorías UAO original](https://github.com/Nicolas9990/AsesoriasUAO). El historial de `main` de ese repositorio registra sus commits iniciales a nombre de **DanielFerAcosta**. Esta copia traslada y organiza la aplicación con React, Ionic, Capacitor y Firebase.
+
 ## Estructura de la aplicación
 
 ```
@@ -27,8 +31,81 @@ apps/client/src/
 
 ## Requisitos
 
-- Node.js 20.19+ o 22.12+.
-- npm.
-- Proyecto Firebase con Authentication (correo y contraseña) y Cloud Firestore en Native mode.
-- Android Studio para compilar Android; macOS y Xcode para compilar iOS.
+- Node.js 20.19+ o 22.12+. npm se instala junto con Node.js.
+- Git.
+- Firebase Authentication con correo y contraseña y Cloud Firestore para ejecutar la aplicación.
+- Android Studio para compilar Android. Para iOS se necesita macOS y Xcode.
 
+Comprueba las versiones desde una terminal:
+
+```bash
+node --version
+npm --version
+git --version
+```
+
+## Instalación y ejecución
+
+Clona el repositorio y entra a la carpeta del proyecto:
+
+```bash
+git clone https://github.com/Nicolas9990/AsesoriasUAO-React-Ionic.git
+cd AsesoriasUAO-React-Ionic
+```
+
+Las dependencias de React, Ionic, Vite, TypeScript, Capacitor y Firebase se declaran en `apps/client/package.json`. **No instales Vite, Ionic ni TypeScript globalmente.** Instálalas desde la carpeta del cliente:
+
+```bash
+cd apps/client
+npm ci
+```
+
+Configura Firebase copiando el ejemplo a un archivo local. En PowerShell:
+
+```powershell
+Copy-Item .env.example .env.local
+```
+
+En Símbolo del sistema (CMD):
+
+```bat
+copy .env.example .env.local
+```
+
+Revisa los valores de `.env.local` y reemplázalos por la configuración de tu app web de Firebase si corresponde. Ese archivo está excluido de Git; no lo subas al repositorio.
+
+Con la terminal aún en `apps/client`, inicia el servidor de desarrollo o compila:
+
+```bash
+npm run dev
+npm run build
+```
+
+También puedes ejecutar ambos scripts desde la raíz del repositorio, después de instalar las dependencias:
+
+```bash
+npm run dev
+npm run build
+```
+
+## Configuración de Firebase
+
+En Firebase Console, habilita Authentication con correo y contraseña y crea Cloud Firestore. Para publicar las reglas e índices incluidos en el proyecto, autentícate con Firebase CLI y ejecuta desde la raíz:
+
+```bash
+npx -y firebase-tools@latest login
+npx -y firebase-tools@latest deploy --only firestore --project asesoriasuao
+```
+
+Los profesores y las asignaturas de prueba se configuran en Firestore Console; la app no incluye panel de administración ni Cloud Functions.
+
+## Aplicación móvil
+
+Para preparar y abrir Android Studio, ejecuta desde la raíz:
+
+```bash
+npm run cap:sync
+npm run cap:android
+```
+
+Para iOS se requiere macOS con Xcode instalado; ejecuta `npm run cap:sync` y luego `npm run cap:ios`.
