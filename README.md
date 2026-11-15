@@ -2,9 +2,6 @@
 
 Aplicación móvil y web para conectar estudiantes y profesores de la Universidad Autónoma de Occidente. Está construida con React, Ionic, Capacitor y Firebase Authentication/Cloud Firestore. El proyecto no incluye servidor propio ni Cloud Functions.
 
-## Reconocimiento
-
-Esta versión parte del proyecto [Asesorías UAO original](https://github.com/Nicolas9990/AsesoriasUAO). El historial de `main` de ese repositorio registra sus commits iniciales a nombre de **DanielFerAcosta**. Esta copia traslada y organiza la aplicación con React, Ionic, Capacitor y Firebase.
 
 ## Estructura de la aplicación
 
@@ -34,7 +31,7 @@ apps/client/src/
 - Node.js 20.19+ o 22.12+. npm se instala junto con Node.js.
 - Git.
 - Firebase Authentication con correo y contraseña y Cloud Firestore para ejecutar la aplicación.
-- Android Studio para compilar Android. Para iOS se necesita macOS y Xcode.
+- Android Studio para compilar Android.
 
 Comprueba las versiones desde una terminal:
 
@@ -46,16 +43,9 @@ git --version
 
 ## Instalación y ejecución
 
-Clona el repositorio y entra a la carpeta del proyecto:
-
-```bash
-git clone https://github.com/Nicolas9990/AsesoriasUAO-React-Ionic.git
-cd AsesoriasUAO-React-Ionic
-```
-
 Las dependencias de React, Ionic, Vite, TypeScript, Capacitor y Firebase se declaran en `apps/client/package.json`. **No instales Vite, Ionic ni TypeScript globalmente.** Instálalas desde la carpeta del cliente:
 
-```bash
+```bash   Entra a la carpeta desde la terminal asi 
 cd apps/client
 npm ci
 ```
@@ -72,7 +62,7 @@ En Símbolo del sistema (CMD):
 copy .env.example .env.local
 ```
 
-Revisa los valores de `.env.local` y reemplázalos por la configuración de tu app web de Firebase si corresponde. Ese archivo está excluido de Git; no lo subas al repositorio.
+Revisa los valores de `.env.local` y reemplázalos por la configuración de tu app web de Firebase si corresponde. Ese archivo está excluido de Git; no lo subas al repositorio. (O mejor copien el .env.example y peguenlo y cambienle el nombre a .env.local y borren la informacion de .env.example)
 
 Con la terminal aún en `apps/client`, inicia el servidor de desarrollo o compila:
 
@@ -107,5 +97,3 @@ Para preparar y abrir Android Studio, ejecuta desde la raíz:
 npm run cap:sync
 npm run cap:android
 ```
-
-Para iOS se requiere macOS con Xcode instalado; ejecuta `npm run cap:sync` y luego `npm run cap:ios`.
