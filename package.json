@@ -9,6 +9,8 @@
     "cap:sync": "npm --prefix apps/client run cap:sync",
     "cap:android": "npm --prefix apps/client run cap:android",
     "cap:ios": "npm --prefix apps/client run cap:ios"
+  },
+  "dependencies": {
+    "vite": "^8.3.8"
   }
 }
-
