@@ -4,31 +4,12 @@ La app no tiene un servidor propio. React muestra las pantallas y se conecta dir
 
 ## Primero: cómo se organiza
 
-- **Pages** (páginas): pantallas completas. Por ejemplo, `FindAdvisorPage` es la pantalla donde un estudiante busca asesorías.
-- **Components** (componentes): piezas visuales reutilizables. `SlotCard` muestra un horario y `BookingCard` una reserva.
-- **Context** (contexto): datos de sesión compartidos por muchas pantallas. Aquí están el usuario, su perfil, el inicio de sesión y el registro.
-- **Hooks** (ganchos): funciones de React que reutilizan estado o consultas. `useAuth` lee la sesión; `useAdvisoryData` escucha datos de Firestore.
-- **Routes** (rutas): decide qué pantalla mostrar y qué rol puede entrar a cada ruta.
-- **Helpers** (ayudantes): funciones pequeñas que no dibujan pantallas, como fechas y mensajes de error.
-
-### ¿Qué significan `advisory` y `shared`?
-
-Son nombres de carpetas, no palabras especiales de React:
-
-- `components/advisory` significa “componentes de asesorías”: tarjetas de horarios y reservas.
-- `components/shared` significa “componentes compartidos”: marco de página y mensajes que se usan en varios espacios.
-
-## Archivos de configuración
-
-- `apps/client/.env.example`: ejemplo de los valores que se copian a `.env.local` para conectar Firebase.
-- `firebase.json`: indica a Firebase CLI dónde están las reglas e índices de Firestore.
-- `apps/client/firestore.rules`: define quién puede leer o cambiar cada colección.
-- `apps/client/firestore.indexes.json`: índices que Firestore necesita para algunas búsquedas.
-- `apps/client/package.json`: dependencias y comandos del frontend; Vite, React e Ionic se instalan con `npm ci` en `apps/client`.
-- `apps/client/vite.config.ts`: activa Vite y el plugin de React durante desarrollo y compilación.
-- `apps/client/capacitor.config.ts`: nombre e identificador que Capacitor usa para Android/iOS.
-
-Los archivos JSON no admiten comentarios dentro del formato; por eso la explicación de sus campos está aquí.
+- **Pages**: pantallas completas. Por ejemplo, `FindAdvisorPage` es la pantalla donde un estudiante busca asesorías.
+- **Components**: piezas visuales reutilizables. `SlotCard` muestra un horario y `BookingCard` una reserva.
+- **Context**: datos de sesión compartidos por muchas pantallas. Aquí están el usuario, su perfil, el inicio de sesión y el registro.
+- **Hooks**: funciones de React que reutilizan estado o consultas. `useAuth` lee la sesión; `useAdvisoryData` escucha datos de Firestore.
+- **Routes**: decide qué pantalla mostrar y qué rol puede entrar a cada ruta.
+- **Helpers**: funciones pequeñas que no dibujan pantallas, como fechas y mensajes de error.
 
 ## Recorrido de inicio de sesión
 

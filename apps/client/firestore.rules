@@ -1,8 +1,6 @@
-// Reglas de acceso que Firestore comprueba en cada lectura y escritura desde la app.
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Solo permite acceso a cuentas autenticadas con correo UAO verificado.
     function isUniversityUser() {
       return request.auth != null
         && request.auth.token.email_verified == true
@@ -10,27 +8,22 @@ service cloud.firestore {
         && request.auth.token.email.matches('^[A-Za-z0-9._%+-]+@uao\\.edu\\.co$');
     }
 
-    // Comprueba que el documento pertenece a la persona conectada.
     function owns(uid) {
       return isUniversityUser() && request.auth.uid == uid;
     }
 
-    // Lee el rol guardado en el perfil para proteger acciones por tipo de usuario.
     function roleIs(uid, role) {
       return get(/databases/$(database)/documents/perfiles/$(uid)).data.rol == role;
     }
 
-    // Comprueba que un documento solo incluya los campos permitidos.
     function hasOnly(data, fields) {
       return data.keys().hasOnly(fields);
     }
 
-    // Comprueba que un texto tenga una longitud aceptable.
     function validName(value, minimum, maximum) {
       return value is string && value.size() >= minimum && value.size() <= maximum;
     }
 
-    // Valida los campos privados del perfil y evita que el usuario cambie su rol.
     function validPrivateProfile(uid, data) {
       return data is map
         && hasOnly(data, ['uid', 'nombre', 'correo', 'rol', 'creadoEn'])
@@ -42,7 +35,6 @@ service cloud.firestore {
         && data.creadoEn is timestamp;
     }
 
-    // Valida el perfil público; solo expone datos necesarios en las tarjetas.
     function validPublicProfile(uid, data) {
       return data is map
         && hasOnly(data, ['uid', 'nombre', 'creadoEn'])
@@ -52,12 +44,10 @@ service cloud.firestore {
         && data.creadoEn is timestamp;
     }
 
-    // Comprueba que el nombre de la reserva coincida con el perfil público.
     function publicName(uid, name) {
       return get(/databases/$(database)/documents/perfilesPublicos/$(uid)).data.nombre == name;
     }
 
-    // Revisa formato, duración y fechas de un horario antes de guardarlo.
     function validSlot(data) {
       return data is map
         && hasOnly(data, ['profesorId', 'profesorNombre', 'asignaturaId', 'asignaturaNombre', 'inicio', 'fin', 'reservado', 'tieneHistorial', 'activo', 'creadoEn', 'reservaId'])
@@ -74,12 +64,10 @@ service cloud.firestore {
         && data.creadoEn is timestamp;
     }
 
-    // Verifica que el profesor sea dueño del horario que quiere eliminar.
     function professorOwnsSlot(data) {
       return owns(data.profesorId) && roleIs(request.auth.uid, 'profesor');
     }
 
-    // Revisa campos y estados permitidos de una reserva.
     function validBooking(data) {
       return data is map
         && hasOnly(data, ['horarioId', 'estudianteId', 'estudianteNombre', 'profesorId', 'profesorNombre', 'asignaturaId', 'asignaturaNombre', 'inicio', 'fin', 'estado', 'creadaEn', 'actualizadaEn'])
@@ -96,7 +84,6 @@ service cloud.firestore {
         && data.creadaEn is timestamp && data.actualizadaEn is timestamp;
     }
 
-    // Perfil privado: cada usuario puede leer el suyo; el registro crea rol estudiante.
     match /perfiles/{uid} {
       allow get: if owns(uid);
       allow list: if false;
@@ -117,13 +104,11 @@ service cloud.firestore {
         && getAfter(/databases/$(database)/documents/perfilesPublicos/$(uid)).data.nombre == request.resource.data.nombre;
       allow delete: if false;
 
-      // Esta subcolección registra las materias asignadas al profesor.
       match /asignaturas/{asignaturaId} {
         allow get, list: if owns(uid);
         allow create, update, delete: if false;
       }
 
-      // Calendario privado usado para detectar cruces al publicar horarios.
       match /locks/horarios {
         allow get: if owns(uid) && roleIs(uid, 'profesor');
         allow list, delete: if false;
@@ -137,7 +122,6 @@ service cloud.firestore {
       }
     }
 
-    // Solo contiene nombre y datos públicos mínimos para mostrar participantes.
     match /perfilesPublicos/{uid} {
       allow read: if isUniversityUser();
       allow create: if owns(uid)
@@ -153,13 +137,11 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Catálogo general: cuentas verificadas leen las materias activas.
     match /asignaturas/{asignaturaId} {
       allow read: if isUniversityUser() && resource.data.activa == true;
       allow create, update, delete: if false;
     }
 
-    // Horarios: lectura UAO, publicación docente y reserva atómica por estudiantes.
     match /horarios/{horarioId} {
       allow read: if isUniversityUser();
 
@@ -180,6 +162,8 @@ service cloud.firestore {
           'fin': request.resource.data.fin
         }]);
 
+      // A slot and its booking must change atomically. This makes concurrent
+      // student reservations contend on the same slot document.
       allow update: if isUniversityUser()
         && resource.data.activo == true
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reservado', 'tieneHistorial', 'reservaId'])
@@ -225,7 +209,6 @@ service cloud.firestore {
         }]);
     }
 
-    // Reservas: solo participante y profesor pueden consultar y actualizar la solicitud.
     match /reservas/{reservaId} {
       allow read: if isUniversityUser()
         && (resource.data.estudianteId == request.auth.uid || resource.data.profesorId == request.auth.uid);
@@ -280,7 +263,6 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Cualquier ruta no declarada queda bloqueada por defecto.
     match /{document=**} {
       allow read, write: if false;
     }

@@ -1,18 +1,15 @@
-// Tarjeta visual de una reserva. El rol determina si muestra profesor o estudiante.
 import type { ReactNode } from 'react';
 import { IonBadge, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle } from '@ionic/react';
 import type { UserRole } from '../../context/AuthContext';
 import type { Booking } from '../../types/advisory';
 import { formatDate } from '../../helpers/date';
 
-// Traduce el estado de reserva a una etiqueta con color.
 function StatusBadge({ status }: { status: Booking['estado'] }) {
   const color = status === 'confirmada' || status === 'realizada' ? 'success' : status === 'cancelada' ? 'medium' : 'warning';
   const label = status.charAt(0).toUpperCase() + status.slice(1);
   return <IonBadge color={color}>{label}</IonBadge>;
 }
 
-// Recibe la reserva y crea el contenido que verá cada participante.
 export function BookingCard({ booking, role, actions }: { booking: Booking; role: UserRole; actions?: ReactNode }) {
   const counterpart = role === 'estudiante' ? `Profesor: ${booking.profesorNombre}` : `Estudiante: ${booking.estudianteNombre}`;
   return <IonCard className="portal-card"><IonCardHeader>

@@ -1,4 +1,3 @@
-// Pantalla estudiantil para filtrar horarios disponibles y solicitar una reserva.
 import { useMemo, useState } from 'react';
 import {
   IonButton, IonInput, IonItem, IonLoading, IonSelect, IonSelectOption,
@@ -18,17 +17,14 @@ import { PortalLayout } from '../../components/shared/PortalLayout';
 import { SlotCard } from '../../components/advisory/SlotCard';
 
 export function FindAdvisorPage() {
-  // Lee la cuenta actual y carga el catálogo de materias para los filtros.
   const { user } = useAuth();
   const { subjects, loading: subjectsLoading, error: subjectsError } = useSubjects();
   const [subjectId, setSubjectId] = useState('');
   const [fromDate, setFromDate] = useState(todayInBogota);
   const [notice, setNotice] = useState('');
   const [busyId, setBusyId] = useState('');
-  // Calcula un rango de siete días a partir de la fecha elegida.
   const start = useMemo(() => Timestamp.fromDate(dateTimeInBogota(fromDate, '00:00')), [fromDate]);
   const end = useMemo(() => Timestamp.fromDate(new Date(start.toMillis() + 7 * 24 * 60 * 60 * 1000)), [start]);
-  // Filtros de Firestore: horarios activos, libres y dentro del rango elegido.
   const constraints = useMemo(() => {
     const filters: QueryConstraint[] = [
       where('activo', '==', true), where('reservado', '==', false),
@@ -39,7 +35,6 @@ export function FindAdvisorPage() {
   }, [start, end, subjectId]);
   const { items: slots, loading, error } = useLiveList<Slot>('horarios', constraints, toSlot);
 
-  // Reserva el horario si sigue libre y crea la solicitud al profesor.
   async function reserve(slot: Slot) {
     if (!db || !user) return;
     const firestore = db;
@@ -50,7 +45,6 @@ export function FindAdvisorPage() {
       const slotRef = doc(firestore, 'horarios', slot.id);
       const profileRef = doc(firestore, 'perfilesPublicos', currentUser.uid);
       const bookingRef = doc(collection(firestore, 'reservas'));
-      // Actualiza horario y crea reserva juntos para evitar reservas duplicadas.
       await runTransaction(firestore, async (transaction) => {
         const [slotSnapshot, profileSnapshot] = await Promise.all([
           transaction.get(slotRef), transaction.get(profileRef),
@@ -60,7 +54,6 @@ export function FindAdvisorPage() {
         if (current.activo !== true || current.reservado === true || current.inicio.toMillis() <= Date.now()) {
           throw new Error('El horario ya no está disponible. Actualiza los resultados.');
         }
-        // Bloquea el horario y crea la reserva dentro de la misma transacción.
         transaction.update(slotRef, { reservado: true, tieneHistorial: true, reservaId: bookingRef.id });
         transaction.set(bookingRef, {
           horarioId: slotRef.id,
@@ -84,7 +77,6 @@ export function FindAdvisorPage() {
 
   return <PortalLayout title="Encuentra una asesoría">
     <p className="portal-lede">Filtra por asignatura y fecha. Los horarios disponibles se actualizan en tiempo real.</p>
-    {/* Estos controles actualizan los filtros y la consulta en tiempo real. */}
     <section className="filter-card">
       <IonItem><IonSelect label="Asignatura" labelPlacement="stacked" value={subjectId} onIonChange={(e) => setSubjectId(e.detail.value ?? '')} interface="popover">
         <IonSelectOption value="">Todas las asignaturas</IonSelectOption>

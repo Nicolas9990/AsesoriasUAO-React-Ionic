@@ -1,4 +1,3 @@
-// Pantalla que explica qué hacer si falta verificar el correo o habilitar el perfil.
 import { useState } from 'react';
 import {
   IonButton, IonContent, IonPage, IonText, IonTitle, IonToolbar,
@@ -7,10 +6,8 @@ import { useAuth } from '../../context/AuthContext';
 
 export function ProfilePendingPage() {
   const { signOutUser, error, verificationPending, resendVerification, refreshProfile } = useAuth();
-  // Mensajes separados para confirmar una acción o explicar un error.
   const [message, setMessage] = useState('');
   const [actionError, setActionError] = useState('');
-  // Ejecuta una acción (reenviar correo o actualizar perfil) y muestra su resultado.
   async function run(action: () => Promise<void>, confirmation: string) {
     setMessage('');
     setActionError('');

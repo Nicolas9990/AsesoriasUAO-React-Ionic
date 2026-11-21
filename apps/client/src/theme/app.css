@@ -1,4 +1,3 @@
-/* Estilos de las pantallas, formularios, tarjetas, menús y ajustes para móvil. */
 :root {
     color: #172b42;
     background: #f5f8fc;
@@ -8,7 +7,6 @@ body {
     background: #f5f8fc;
 }
 
-/* Pantallas de acceso y estructura principal. */
 .auth-content,
 .home-content,
 .setup-content {
@@ -239,7 +237,6 @@ body {
     white-space: normal;
 }
 
-/* Menú y contenido de los espacios de estudiante y profesor. */
 .portal-nav {
     --background: #fff;
     --border-color: #e7edf4;
@@ -273,7 +270,6 @@ body {
     line-height: 1.6;
 }
 
-/* Cuadrícula de tarjetas, filtros y formularios de horarios. */
 .portal-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -367,7 +363,6 @@ ion-badge {
     vertical-align: middle;
 }
 
-/* Ajustes para que formularios y tarjetas se adapten a pantallas pequeñas. */
 @media (max-width: 760px) {
     .auth-layout {
         grid-template-columns: 1fr;

@@ -1,4 +1,3 @@
-// Define las direcciones principales de la app y separa las rutas públicas y protegidas.
 import {
   IonApp, IonLoading, IonRouterOutlet,
 } from '@ionic/react';
@@ -12,10 +11,8 @@ import { ManageSchedulesPage } from '../pages/professor/ManageSchedulesPage';
 import { ProfessorRequestsPage } from '../pages/professor/ProfessorRequestsPage';
 import { UserRoutes, UserHomeRoute } from './UserRoutes';
 
-// Declara las rutas y redirige a quienes intenten abrir una pantalla que no les corresponde.
 export function AppRoutes() {
   const { user, loading } = useAuth();
-  // Espera a que Firebase confirme si hay una sesión antes de decidir la ruta.
   if (loading) return <IonApp><IonLoading isOpen message="Cargando…" /></IonApp>;
 
   return <IonApp><IonReactRouter><IonRouterOutlet>
