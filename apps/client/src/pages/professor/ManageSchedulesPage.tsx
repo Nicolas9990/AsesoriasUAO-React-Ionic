@@ -7,7 +7,7 @@ import {
   runTransaction, serverTimestamp, where,
 } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../context/AuthContext';
 import { useLiveList, toSlot } from '../../hooks/useAdvisoryData';
 import { dateTimeInBogota, todayInBogota } from '../../helpers/date';
 import { errorMessage } from '../../helpers/errors';

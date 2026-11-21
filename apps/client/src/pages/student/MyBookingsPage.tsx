@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { IonButton, IonLoading } from '@ionic/react';
 import { doc, limit, orderBy, runTransaction, serverTimestamp, where } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../context/AuthContext';
 import { useLiveList, toBooking } from '../../hooks/useAdvisoryData';
 import { errorMessage } from '../../helpers/errors';
 import type { Booking } from '../../types/advisory';

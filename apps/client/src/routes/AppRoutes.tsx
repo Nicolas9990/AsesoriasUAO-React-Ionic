@@ -3,7 +3,7 @@ import {
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { Navigate, Route } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/AuthContext';
 import { AuthPage } from '../pages/auth/AuthPage';
 import { FindAdvisorPage } from '../pages/student/FindAdvisorPage';
 import { MyBookingsPage } from '../pages/student/MyBookingsPage';

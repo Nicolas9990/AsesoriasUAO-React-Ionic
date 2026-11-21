@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   IonButton, IonContent, IonPage, IonText, IonTitle, IonToolbar,
 } from '@ionic/react';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../context/AuthContext';
 
 export function ProfilePendingPage() {
   const { signOutUser, error, verificationPending, resendVerification, refreshProfile } = useAuth();

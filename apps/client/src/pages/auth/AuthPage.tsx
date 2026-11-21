@@ -3,7 +3,7 @@ import {
   IonButton, IonContent, IonInput, IonItem, IonLoading, IonPage, IonText,
 } from '@ionic/react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../context/AuthContext';
 
 export function AuthPage({ register = false }: { register?: boolean }) {
   const { signIn, register: createAccount, error: authError, clearError } = useAuth();

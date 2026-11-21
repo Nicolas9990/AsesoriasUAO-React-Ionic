@@ -3,7 +3,7 @@ import {
   IonButton, IonButtons, IonContent, IonHeader, IonPage, IonTitle, IonToolbar,
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../context/AuthContext';
 
 export function PortalLayout({ title, children }: PropsWithChildren<{ title: string }>) {
   const { profile, signOutUser } = useAuth();

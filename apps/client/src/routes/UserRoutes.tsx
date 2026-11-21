@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { IonContent, IonLoading, IonPage } from '@ionic/react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/AuthContext';
 import type { UserRole } from '../context/AuthContext';
 import { ProfilePendingPage } from '../pages/auth/ProfilePendingPage';
 
