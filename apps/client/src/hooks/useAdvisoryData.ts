@@ -79,5 +79,6 @@ export function toBooking(id: string, data: DocumentData): Booking {
     inicio: data.inicio as Timestamp,
     fin: data.fin as Timestamp,
     estado: data.estado,
+    motivo: data.motivo ? String(data.motivo) : undefined,
   };
 }

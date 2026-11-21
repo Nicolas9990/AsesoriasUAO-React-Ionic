@@ -26,4 +26,12 @@ export type Booking = {
   inicio: Timestamp;
   fin: Timestamp;
   estado: 'pendiente' | 'confirmada' | 'cancelada' | 'realizada';
+  motivo?: string;
+};
+
+export type ChatMessage = {
+  id: string;
+  autorId: string;
+  texto: string;
+  imagen?: string;
 };

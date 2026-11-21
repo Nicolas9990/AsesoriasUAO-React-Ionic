@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { IonButton, IonLoading } from '@ionic/react';
+import { IonAlert, IonButton, IonLoading } from '@ionic/react';
 import { doc, limit, orderBy, runTransaction, serverTimestamp, where } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useAuth } from '../../context/AuthContext';
@@ -16,7 +16,8 @@ export function ProfessorRequestsPage() {
   const { items, loading, error } = useLiveList<Booking>('reservas', constraints, toBooking);
   const [busyId, setBusyId] = useState('');
   const [notice, setNotice] = useState('');
-  async function update(booking: Booking, state: 'confirmada' | 'cancelada' | 'realizada') {
+  const [rejecting, setRejecting] = useState<Booking | null>(null);
+  async function update(booking: Booking, state: 'confirmada' | 'cancelada' | 'realizada', motivo?: string) {
     if (!db || !user) return;
     const firestore = db;
     const currentUser = user;
@@ -42,7 +43,9 @@ export function ProfessorRequestsPage() {
           if (!slot.exists() || slot.get('reservaId') !== bookingRef.id) throw new Error('El horario ya no corresponde a esta reserva.');
           transaction.update(slotRef, { reservado: false, reservaId: null });
         }
-        transaction.update(bookingRef, { estado: state, actualizadaEn: serverTimestamp() });
+        transaction.update(bookingRef, state === 'cancelada'
+          ? { estado: state, motivo, actualizadaEn: serverTimestamp() }
+          : { estado: state, actualizadaEn: serverTimestamp() });
       });
       setNotice(state === 'confirmada' ? 'Reserva confirmada.' : state === 'cancelada' ? 'Reserva cancelada.' : 'Asesoría marcada como realizada.');
     } catch (cause) { setNotice(errorMessage(cause)); }
@@ -57,12 +60,31 @@ export function ProfessorRequestsPage() {
       const actions = <div className="booking-actions">
         {booking.estado === 'pendiente' && booking.inicio.toMillis() > Date.now() && <>
           <IonButton disabled={!!busyId} onClick={() => void update(booking, 'confirmada')}>{busyId === booking.id ? 'Guardando…' : 'Confirmar'}</IonButton>
-          <IonButton fill="outline" color="danger" disabled={!!busyId} onClick={() => void update(booking, 'cancelada')}>Rechazar / cancelar</IonButton>
+          <IonButton fill="outline" color="danger" disabled={!!busyId} onClick={() => setRejecting(booking)}>Rechazar</IonButton>
         </>}
-        {booking.estado === 'confirmada' && booking.inicio.toMillis() > Date.now() && <IonButton fill="outline" color="danger" disabled={!!busyId} onClick={() => void update(booking, 'cancelada')}>Cancelar</IonButton>}
+        {booking.estado === 'confirmada' && booking.inicio.toMillis() > Date.now() && <IonButton fill="outline" color="danger" disabled={!!busyId} onClick={() => setRejecting(booking)}>Cancelar</IonButton>}
         {booking.estado === 'confirmada' && booking.fin.toMillis() <= Date.now() && <IonButton disabled={!!busyId} onClick={() => void update(booking, 'realizada')}>Marcar realizada</IonButton>}
       </div>;
       return <BookingCard key={booking.id} booking={booking} role="profesor" actions={actions} />;
     })}</div>
+    <IonAlert
+      isOpen={rejecting !== null}
+      header="Justifica tu decisión"
+      message="El estudiante verá este motivo."
+      inputs={[{ name: 'motivo', type: 'textarea', placeholder: 'Escribe el motivo', attributes: { maxlength: 300 } }]}
+      buttons={[
+        { text: 'Volver', role: 'cancel' },
+        {
+          text: 'Enviar',
+          handler: (data: { motivo?: string }) => {
+            const motivo = String(data.motivo ?? '').trim();
+            if (motivo.length < 3) { setNotice('Escribe una justificación de al menos 3 caracteres.'); return false; }
+            if (rejecting) void update(rejecting, 'cancelada', motivo);
+            return true;
+          },
+        },
+      ]}
+      onDidDismiss={() => setRejecting(null)}
+    />
   </PortalLayout>;
 }

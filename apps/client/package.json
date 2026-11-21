@@ -13,8 +13,11 @@
   },
   "dependencies": {
     "@capacitor/android": "^8.6.2",
+    "@capacitor/camera": "^8.2.6",
     "@capacitor/core": "^8.6.2",
+    "@capacitor/haptics": "^8.0.2",
     "@capacitor/ios": "^8.6.2",
+    "@capacitor/local-notifications": "^8.3.1",
     "@ionic/react": "^9.0.11",
     "@ionic/react-router": "^9.0.11",
     "firebase": "^13.3.0",

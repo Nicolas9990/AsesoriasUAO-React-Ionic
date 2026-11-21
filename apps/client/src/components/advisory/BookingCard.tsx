@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { IonBadge, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle } from '@ionic/react';
+import { IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle } from '@ionic/react';
 import type { UserRole } from '../../context/AuthContext';
 import type { Booking } from '../../types/advisory';
 import { formatDate } from '../../helpers/date';
@@ -16,6 +16,9 @@ export function BookingCard({ booking, role, actions }: { booking: Booking; role
     <IonCardSubtitle>{booking.asignaturaNombre}</IonCardSubtitle>
     <IonCardTitle>{formatDate(booking.inicio)}</IonCardTitle>
   </IonCardHeader><IonCardContent>
-    <p>{counterpart}</p><p>Estado: <StatusBadge status={booking.estado} /></p>{actions}
+    <p>{counterpart}</p><p>Estado: <StatusBadge status={booking.estado} /></p>
+    {booking.estado === 'cancelada' && booking.motivo && <p className="booking-reason"><strong>Justificación:</strong> {booking.motivo}</p>}
+    <IonButton fill="outline" routerLink={`/chat/${booking.id}`}>Chat</IonButton>
+    {actions}
   </IonCardContent></IonCard>;
 }

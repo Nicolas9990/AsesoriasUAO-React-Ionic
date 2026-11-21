@@ -420,3 +420,61 @@ ion-badge {
         font-size: 12px;
     }
 }
+.booking-reason {
+    padding: 10px 12px;
+    border-radius: 12px;
+    color: #b42318;
+    background: #fef3f2;
+}
+
+.chat-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 50vh;
+    min-height: 200px;
+    margin: 14px 0;
+    padding: 14px;
+    overflow-y: auto;
+    border: 1px solid #e5ebf2;
+    border-radius: 16px;
+    background: #fff;
+}
+
+.chat-message {
+    max-width: 80%;
+    padding: 8px 12px;
+    align-self: flex-start;
+    border-radius: 14px;
+    background: #eef2f7;
+}
+
+.chat-message p {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.chat-mine {
+    align-self: flex-end;
+    color: #fff;
+    background: #155eef;
+}
+
+.chat-image {
+    display: block;
+    max-width: 100%;
+    border-radius: 10px;
+}
+
+.chat-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chat-input {
+    --background: #f8fafc;
+    --padding-start: 14px;
+    border: 1px solid #e3eaf1;
+    border-radius: 12px;
+}
