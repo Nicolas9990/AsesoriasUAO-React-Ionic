@@ -1,3 +1,4 @@
+// Punto de entrada de React: carga estilos, prepara Ionic y monta la aplicación en el HTML.
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { setupIonicReact } from '@ionic/react';
@@ -16,6 +17,7 @@ import '@ionic/react/css/display.css';
 import './theme/variables.css';
 import './theme/app.css';
 
+// Configura Ionic y luego crea el punto donde React dibuja toda la app.
 setupIonicReact({ mode: 'md' });
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

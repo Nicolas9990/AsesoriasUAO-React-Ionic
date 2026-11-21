@@ -1,3 +1,4 @@
+// Pantalla docente para revisar solicitudes y cambiar el estado de una reserva.
 import { useMemo, useState } from 'react';
 import { IonButton, IonLoading } from '@ionic/react';
 import { doc, limit, orderBy, runTransaction, serverTimestamp, where } from 'firebase/firestore';
@@ -12,10 +13,12 @@ import { PortalLayout } from '../../components/shared/PortalLayout';
 
 export function ProfessorRequestsPage() {
   const { user } = useAuth();
+  // Firestore filtra solicitudes para que el profesor vea únicamente las suyas.
   const constraints = useMemo(() => user ? [where('profesorId', '==', user.uid), orderBy('creadaEn', 'desc'), limit(100)] : [], [user?.uid]);
   const { items, loading, error } = useLiveList<Booking>('reservas', constraints, toBooking);
   const [busyId, setBusyId] = useState('');
   const [notice, setNotice] = useState('');
+  // Confirma, cancela o marca realizada una reserva según su estado y horario.
   async function update(booking: Booking, state: 'confirmada' | 'cancelada' | 'realizada') {
     if (!db || !user) return;
     const firestore = db;
@@ -23,6 +26,7 @@ export function ProfessorRequestsPage() {
     setBusyId(booking.id); setNotice('');
     try {
       const bookingRef = doc(firestore, 'reservas', booking.id);
+      // La transacción vuelve a revisar el estado antes de escribir el cambio.
       await runTransaction(firestore, async (transaction) => {
         const snapshot = await transaction.get(bookingRef);
         if (!snapshot.exists()) throw new Error('No se encontró la reserva.');
@@ -30,12 +34,14 @@ export function ProfessorRequestsPage() {
         const ownsAsProfessor = current.profesorId === currentUser.uid;
         const ownsAsStudent = current.estudianteId === currentUser.uid;
         const now = Date.now();
+        // Cada estado tiene reglas distintas según el rol y la hora de la asesoría.
         const allowed = state === 'confirmada'
           ? ownsAsProfessor && current.estado === 'pendiente' && current.inicio.toMillis() > now
           : state === 'cancelada'
             ? (ownsAsProfessor || ownsAsStudent) && ['pendiente', 'confirmada'].includes(current.estado) && current.inicio.toMillis() > now
             : ownsAsProfessor && current.estado === 'confirmada' && current.fin.toMillis() <= now;
         if (!allowed) throw new Error('La acción ya no está permitida para esta reserva.');
+        // Al cancelar, se libera el horario relacionado con la solicitud.
         if (state === 'cancelada') {
           const slotRef = doc(firestore, 'horarios', String(current.horarioId));
           const slot = await transaction.get(slotRef);

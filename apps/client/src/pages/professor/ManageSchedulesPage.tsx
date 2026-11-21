@@ -1,3 +1,4 @@
+// Pantalla docente para publicar y eliminar horarios de asesoría.
 import { useEffect, useMemo, useState } from 'react';
 import {
   IonBadge, IonButton, IonInput, IonItem, IonLoading, IonSelect, IonSelectOption,
@@ -18,6 +19,7 @@ import { SlotCard } from '../../components/advisory/SlotCard';
 
 export function ManageSchedulesPage() {
   const { user } = useAuth();
+  // Estado de materias asignadas, campos del formulario y mensajes de esta pantalla.
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [subjectsLoading, setSubjectsLoading] = useState(true);
   const [subjectsError, setSubjectsError] = useState('');
@@ -28,9 +30,11 @@ export function ManageSchedulesPage() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
 
+  // Al abrir la pantalla, busca qué materias tiene asignadas este profesor.
   useEffect(() => {
     if (!db || !user) return;
     let active = true;
+    // Para cada materia asignada, busca su nombre en el catálogo global.
     async function loadAssignedSubjects() {
       try {
         const assignmentSnapshot = await getDocs(collection(db!, 'perfiles', user!.uid, 'asignaturas'));
@@ -48,9 +52,11 @@ export function ManageSchedulesPage() {
     return () => { active = false; };
   }, [user?.uid]);
 
+  // Consulta solo horarios futuros del profesor actual, ordenados por fecha.
   const constraints = useMemo(() => user ? [where('profesorId', '==', user.uid), where('inicio', '>=', Timestamp.now()), orderBy('inicio'), limit(100)] : [], [user?.uid]);
   const { items: slots, loading, error } = useLiveList<Slot>('horarios', constraints, toSlot);
 
+  // Crea un horario y actualiza el calendario del profesor dentro de una transacción.
   async function createSchedule() {
     if (!db || !user || !subjectId || !date || !time) { setNotice('Selecciona una asignatura, fecha y hora.'); return; }
     const firestore = db;
@@ -70,6 +76,7 @@ export function ManageSchedulesPage() {
       const assignmentRef = doc(firestore, 'perfiles', currentUser.uid, 'asignaturas', subjectId);
       const lockRef = doc(firestore, 'perfiles', currentUser.uid, 'locks', 'horarios');
       const slotRef = doc(collection(firestore, 'horarios'));
+      // Una transacción evita guardar el horario si alguna validación deja de cumplirse.
       await runTransaction(firestore, async (transaction) => {
         const [profile, publicProfile, subject, assignment, lock] = await Promise.all([
           transaction.get(profileRef), transaction.get(publicProfileRef), transaction.get(subjectRef),
@@ -85,11 +92,13 @@ export function ManageSchedulesPage() {
           horarioId: string; inicio: Timestamp; fin: Timestamp;
         }>;
         if (!Array.isArray(storedIntervals)) throw new Error('El calendario del profesor no tiene un formato válido.');
+        // Compara horas de inicio y fin para rechazar traslapes en el calendario.
         const intervals = storedIntervals.filter((item) => item.fin instanceof Timestamp
           && item.fin.toMillis() > Timestamp.now().toMillis());
         const overlaps = intervals.some((item) => item.inicio instanceof Timestamp
           && startTimestamp.toMillis() < item.fin.toMillis() && endTimestamp.toMillis() > item.inicio.toMillis());
         if (overlaps) throw new Error('El horario se cruza con otra franja publicada.');
+        // El calendario guarda los intervalos para impedir que el profesor cruce horarios.
         transaction.set(lockRef, {
           actualizadoEn: serverTimestamp(),
           intervalos: [...intervals, { horarioId: slotRef.id, inicio: startTimestamp, fin: endTimestamp }],
@@ -113,12 +122,14 @@ export function ManageSchedulesPage() {
     finally { setBusy(false); }
   }
 
+  // Solo elimina horarios futuros que aún no tienen una reserva o historial.
   async function removeSchedule(slot: Slot) {
     if (!db || !user) return;
     const firestore = db;
     const currentUser = user;
     setBusy(true); setNotice('');
     try {
+      // Para eliminar, también se quita el intervalo del calendario del profesor.
       const slotRef = doc(firestore, 'horarios', slot.id);
       const lockRef = doc(firestore, 'perfiles', currentUser.uid, 'locks', 'horarios');
       await runTransaction(firestore, async (transaction) => {

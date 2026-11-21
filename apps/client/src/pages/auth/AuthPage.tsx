@@ -1,3 +1,4 @@
+// Pantalla compartida de inicio de sesión y registro de estudiantes.
 import { useState, type FormEvent } from 'react';
 import {
   IonButton, IonContent, IonInput, IonItem, IonLoading, IonPage, IonText,
@@ -7,6 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 
 export function AuthPage({ register = false }: { register?: boolean }) {
   const { signIn, register: createAccount, error: authError, clearError } = useAuth();
+  // Estos estados guardan lo que la persona escribe y el resultado de enviar el formulario.
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -14,16 +16,19 @@ export function AuthPage({ register = false }: { register?: boolean }) {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
+  // Valida el formulario y llama al inicio de sesión o registro del contexto.
   async function submit(event: FormEvent) {
     event.preventDefault();
     setError('');
     setMessage('');
     clearError();
     const normalizedEmail = email.trim().toLowerCase();
+    // Estas comprobaciones dan mensajes claros antes de llamar a Firebase.
     if (register && name.trim().length < 3) {
       setError('Escribe tu nombre completo (al menos 3 caracteres).');
       return;
     }
+    // El registro está limitado a correos institucionales de la UAO.
     if (register && !/^[^@\s]+@uao\.edu\.co$/.test(normalizedEmail)) {
       setError('Regístrate con tu correo institucional @uao.edu.co.');
       return;

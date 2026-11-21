@@ -1,3 +1,4 @@
+// Marco común de las páginas internas: título, navegación, contenido y botón para salir.
 import type { PropsWithChildren } from 'react';
 import {
   IonButton, IonButtons, IonContent, IonHeader, IonPage, IonTitle, IonToolbar,
@@ -6,8 +7,10 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 export function PortalLayout({ title, children }: PropsWithChildren<{ title: string }>) {
+  // El contexto da el nombre/rol de la persona y la acción para cerrar sesión.
   const { profile, signOutUser } = useAuth();
   const location = useLocation();
+  // Cada rol ve enlaces distintos; la ruta actual marca el botón activo.
   const links = profile?.rol === 'estudiante'
     ? [['/buscar', 'Buscar asesorías'], ['/reservas', 'Mis reservas']]
     : [['/horarios', 'Mis horarios'], ['/solicitudes', 'Solicitudes']];

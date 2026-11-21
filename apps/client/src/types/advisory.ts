@@ -1,5 +1,7 @@
+// Forma de los datos de Firestore para materias, horarios y reservas.
 import type { Timestamp } from 'firebase/firestore';
 
+// Subject representa una materia, Slot un horario y Booking una reserva.
 export type Subject = { id: string; nombre: string };
 
 export type Slot = {
