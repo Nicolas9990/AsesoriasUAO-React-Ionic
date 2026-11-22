@@ -70,7 +70,7 @@ service cloud.firestore {
 
     function validBooking(data) {
       return data is map
-        && hasOnly(data, ['horarioId', 'estudianteId', 'estudianteNombre', 'profesorId', 'profesorNombre', 'asignaturaId', 'asignaturaNombre', 'inicio', 'fin', 'estado', 'motivo', 'creadaEn', 'actualizadaEn'])
+        && hasOnly(data, ['horarioId', 'estudianteId', 'estudianteNombre', 'profesorId', 'profesorNombre', 'asignaturaId', 'asignaturaNombre', 'inicio', 'fin', 'estado', 'motivo', 'ocultaEstudiante', 'ocultaProfesor', 'creadaEn', 'actualizadaEn'])
         && data.keys().hasAll(['horarioId', 'estudianteId', 'estudianteNombre', 'profesorId', 'profesorNombre', 'asignaturaId', 'asignaturaNombre', 'inicio', 'fin', 'estado', 'creadaEn', 'actualizadaEn'])
         && data.horarioId is string && data.horarioId.size() <= 150
         && data.estudianteId is string && data.estudianteId.size() <= 128
@@ -82,6 +82,8 @@ service cloud.firestore {
         && data.inicio is timestamp && data.fin is timestamp && data.fin > data.inicio
         && data.estado in ['pendiente', 'confirmada', 'cancelada', 'realizada']
         && (!('motivo' in data) || validName(data.motivo, 3, 300))
+        && (!('ocultaEstudiante' in data) || data.ocultaEstudiante is bool)
+        && (!('ocultaProfesor' in data) || data.ocultaProfesor is bool)
         && data.creadaEn is timestamp && data.actualizadaEn is timestamp;
     }
 
@@ -265,6 +267,19 @@ service cloud.firestore {
             && resource.data.fin <= request.time)
         );
 
+      allow update: if isUniversityUser()
+        && validBooking(request.resource.data)
+        && resource.data.estado == 'cancelada'
+        && request.resource.data.estado == 'cancelada'
+        && (
+          (request.auth.uid == resource.data.estudianteId
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ocultaEstudiante'])
+            && request.resource.data.ocultaEstudiante == true)
+          || (request.auth.uid == resource.data.profesorId
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ocultaProfesor'])
+            && request.resource.data.ocultaProfesor == true)
+        );
+
       allow delete: if false;
 
       match /mensajes/{mensajeId} {
@@ -290,6 +305,19 @@ service cloud.firestore {
 
         allow update, delete: if false;
       }
+    }
+
+    match /fotosPerfil/{uid} {
+      allow get: if owns(uid);
+      allow list: if false;
+      allow create, update: if owns(uid)
+        && request.resource.data.keys().hasOnly(['foto', 'actualizadaEn'])
+        && request.resource.data.keys().hasAll(['foto', 'actualizadaEn'])
+        && request.resource.data.foto is string
+        && request.resource.data.foto.size() <= 200000
+        && request.resource.data.foto.matches('^data:image/(jpeg|png);base64,.*')
+        && request.resource.data.actualizadaEn == request.time;
+      allow delete: if owns(uid);
     }
 
     match /{document=**} {

@@ -4,9 +4,10 @@ import {
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { ProfileMenu } from './ProfileMenu';
 
 export function PortalLayout({ title, children }: PropsWithChildren<{ title: string }>) {
-  const { profile, signOutUser } = useAuth();
+  const { profile } = useAuth();
   const location = useLocation();
   const links = profile?.rol === 'estudiante'
     ? [['/buscar', 'Buscar asesorías'], ['/reservas', 'Mis reservas']]
@@ -16,7 +17,7 @@ export function PortalLayout({ title, children }: PropsWithChildren<{ title: str
       <IonHeader>
         <IonToolbar className="home-toolbar">
           <IonTitle>Asesorías UAO</IonTitle>
-          <IonButtons slot="end"><IonButton onClick={() => void signOutUser()}>Salir</IonButton></IonButtons>
+          <IonButtons slot="end"><ProfileMenu /></IonButtons>
         </IonToolbar>
         <IonToolbar className="portal-nav">
           <IonButtons className="portal-nav-buttons">

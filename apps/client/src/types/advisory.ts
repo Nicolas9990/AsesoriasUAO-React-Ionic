@@ -27,6 +27,8 @@ export type Booking = {
   fin: Timestamp;
   estado: 'pendiente' | 'confirmada' | 'cancelada' | 'realizada';
   motivo?: string;
+  ocultaEstudiante?: boolean;
+  ocultaProfesor?: boolean;
 };
 
 export type ChatMessage = {

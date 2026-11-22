@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
-  IonButton, IonInput, IonItem, IonLoading, IonSelect, IonSelectOption,
+  IonButton, IonInput, IonItem, IonLoading,
 } from '@ionic/react';
 import {
   Timestamp, collection, doc, limit, orderBy, runTransaction,
@@ -15,11 +15,14 @@ import type { Slot } from '../../types/advisory';
 import { InlineState } from '../../components/shared/InlineState';
 import { PortalLayout } from '../../components/shared/PortalLayout';
 import { SlotCard } from '../../components/advisory/SlotCard';
+import { FilterTabs, type FilterOption } from '../../components/shared/FilterTabs';
+
+const ALL_SUBJECTS = 'todas';
 
 export function FindAdvisorPage() {
   const { user } = useAuth();
   const { subjects, loading: subjectsLoading, error: subjectsError } = useSubjects();
-  const [subjectId, setSubjectId] = useState('');
+  const [subjectId, setSubjectId] = useState(ALL_SUBJECTS);
   const [fromDate, setFromDate] = useState(todayInBogota);
   const [notice, setNotice] = useState('');
   const [busyId, setBusyId] = useState('');
@@ -30,10 +33,19 @@ export function FindAdvisorPage() {
       where('activo', '==', true), where('reservado', '==', false),
       where('inicio', '>=', start), where('inicio', '<', end), orderBy('inicio'), limit(50),
     ];
-    if (subjectId) filters.splice(2, 0, where('asignaturaId', '==', subjectId));
     return filters;
-  }, [start, end, subjectId]);
+  }, [start, end]);
   const { items: slots, loading, error } = useLiveList<Slot>('horarios', constraints, toSlot);
+  const visibleSlots = subjectId === ALL_SUBJECTS ? slots : slots.filter((slot) => slot.asignaturaId === subjectId);
+  const options: FilterOption<string>[] = [
+    { value: ALL_SUBJECTS, label: 'Todas', count: slots.length, color: 'dark' },
+    ...subjects.map((subject) => ({
+      value: subject.id,
+      label: subject.nombre,
+      count: slots.filter((slot) => slot.asignaturaId === subject.id).length,
+      color: 'primary',
+    })),
+  ];
 
   async function reserve(slot: Slot) {
     if (!db || !user) return;
@@ -78,18 +90,15 @@ export function FindAdvisorPage() {
   return <PortalLayout title="Encuentra una asesoría">
     <p className="portal-lede">Filtra por asignatura y fecha. Los horarios disponibles se actualizan en tiempo real.</p>
     <section className="filter-card">
-      <IonItem><IonSelect label="Asignatura" labelPlacement="stacked" value={subjectId} onIonChange={(e) => setSubjectId(e.detail.value ?? '')} interface="popover">
-        <IonSelectOption value="">Todas las asignaturas</IonSelectOption>
-        {subjects.map((subject) => <IonSelectOption key={subject.id} value={subject.id}>{subject.nombre}</IonSelectOption>)}
-      </IonSelect></IonItem>
       <IonItem><IonInput label="Desde" labelPlacement="stacked" type="date" value={fromDate} min={todayInBogota()} onIonInput={(e) => setFromDate(String(e.detail.value ?? '').slice(0, 10))} /></IonItem>
     </section>
+    <FilterTabs options={options} value={subjectId} onChange={setSubjectId} />
     {notice && <InlineState>{notice}</InlineState>}
     {subjectsLoading && <InlineState>Cargando asignaturas…</InlineState>}
     {subjectsError && <InlineState danger>No se pudieron cargar las asignaturas: {subjectsError}</InlineState>}
     {loading && <IonLoading isOpen message="Buscando horarios…" />}
     {error && <InlineState danger>No se pudieron cargar horarios. Verifica índices y permisos de Firestore. {error}</InlineState>}
-    {!loading && !error && slots.length === 0 && <InlineState>No hay horarios disponibles para los filtros seleccionados.</InlineState>}
-    <div className="portal-grid">{slots.map((slot) => <SlotCard key={slot.id} slot={slot} action={<IonButton expand="block" disabled={!!busyId} onClick={() => void reserve(slot)}>{busyId === slot.id ? 'Enviando…' : 'Solicitar asesoría'}</IonButton>} />)}</div>
+    {!loading && !error && visibleSlots.length === 0 && <InlineState>No hay horarios disponibles para los filtros seleccionados.</InlineState>}
+    <div className="portal-grid">{visibleSlots.map((slot) => <SlotCard key={slot.id} slot={slot} action={<IonButton expand="block" disabled={!!busyId} onClick={() => void reserve(slot)}>{busyId === slot.id ? 'Enviando…' : 'Solicitar asesoría'}</IonButton>} />)}</div>
   </PortalLayout>;
 }

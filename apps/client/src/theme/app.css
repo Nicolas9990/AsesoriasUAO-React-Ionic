@@ -478,3 +478,59 @@ ion-badge {
     border: 1px solid #e3eaf1;
     border-radius: 12px;
 }
+
+.filter-tabs {
+    margin: 14px 0;
+    --background: #fff;
+}
+
+.filter-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 999px;
+    font-size: 12px;
+}
+
+.profile-button {
+    --padding-start: 4px;
+    --padding-end: 4px;
+}
+
+.profile-avatar {
+    display: block;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.profile-initials {
+    display: grid;
+    place-items: center;
+    color: #fff;
+    background: #102b46;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.portal-card {
+    position: relative;
+}
+
+.booking-dismiss {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 1;
+    margin: 0;
+}
