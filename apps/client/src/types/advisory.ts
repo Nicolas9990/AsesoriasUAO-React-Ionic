@@ -2,6 +2,8 @@ import type { Timestamp } from 'firebase/firestore';
 
 export type Subject = { id: string; nombre: string };
 
+export type Modality = 'presencial' | 'virtual';
+
 export type Slot = {
   id: string;
   profesorId: string;
@@ -13,6 +15,8 @@ export type Slot = {
   reservado: boolean;
   activo: boolean;
   tieneHistorial?: boolean;
+  modalidad?: Modality;
+  lugar?: string;
 };
 
 export type Booking = {
@@ -29,6 +33,8 @@ export type Booking = {
   motivo?: string;
   ocultaEstudiante?: boolean;
   ocultaProfesor?: boolean;
+  modalidad?: Modality;
+  lugar?: string;
 };
 
 export type ChatMessage = {

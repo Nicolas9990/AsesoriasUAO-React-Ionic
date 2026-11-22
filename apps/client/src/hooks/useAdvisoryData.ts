@@ -5,7 +5,7 @@ import {
   type DocumentData, type QueryConstraint,
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import type { Booking, Slot, Subject } from '../types/advisory';
+import type { Booking, Modality, Slot, Subject } from '../types/advisory';
 import { errorMessage } from '../helpers/errors';
 
 export function useSubjects() {
@@ -52,6 +52,10 @@ export function useLiveList<T>(path: string, constraints: QueryConstraint[], map
   return { items, loading, error };
 }
 
+function toModality(value: unknown): Modality | undefined {
+  return value === 'presencial' || value === 'virtual' ? value : undefined;
+}
+
 export function toSlot(id: string, data: DocumentData): Slot {
   return {
     id,
@@ -64,6 +68,8 @@ export function toSlot(id: string, data: DocumentData): Slot {
     reservado: data.reservado === true,
     activo: data.activo === true,
     tieneHistorial: data.tieneHistorial === true,
+    modalidad: toModality(data.modalidad),
+    lugar: data.lugar ? String(data.lugar) : undefined,
   };
 }
 
@@ -82,5 +88,7 @@ export function toBooking(id: string, data: DocumentData): Booking {
     motivo: data.motivo ? String(data.motivo) : undefined,
     ocultaEstudiante: data.ocultaEstudiante === true,
     ocultaProfesor: data.ocultaProfesor === true,
+    modalidad: toModality(data.modalidad),
+    lugar: data.lugar ? String(data.lugar) : undefined,
   };
 }

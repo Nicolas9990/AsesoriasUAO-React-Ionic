@@ -8,10 +8,10 @@ La aplicación se conecta directamente a Firebase Authentication y Cloud Firesto
 | --- | --- | --- |
 | `perfiles/{uid}` | UID, nombre, correo, rol y fecha de creación | El usuario lee su perfil. El alta pública solo puede crear estudiantes; los roles se asignan desde la consola. |
 | `perfilesPublicos/{uid}` | UID, nombre y fecha de creación | Miembros UAO con correo verificado pueden leerlo. No incluye correo ni rol. |
-| `perfiles/{uid}/asignaturas/{asignaturaId}` | Materias asignadas a un profesor | El profesor solo lee las propias. Se administran desde la consola. |
+| `perfiles/{uid}/asignaturas/{asignaturaId}` | Materias asignadas a un profesor | El profesor lee las propias y puede asignarse una materia existente y activa desde la app. |
 | `perfiles/{uid}/locks/horarios` | Intervalos de horarios futuros del profesor | El profesor lo lee y actualiza mediante las transacciones de la app. |
-| `asignaturas/{asignaturaId}` | Nombre y estado activo | Miembros verificados leen asignaturas activas. Se administran desde la consola. |
-| `horarios/{horarioId}` | Profesor, materia, intervalo, disponibilidad e historial | Miembros verificados leen; las reglas permiten a los profesores publicar/eliminar y a estudiantes reservar según el flujo. |
+| `asignaturas/{asignaturaId}` | Nombre, estado activo, creador y fecha | Miembros verificados leen asignaturas activas. Un profesor puede crear una nueva desde la app (el id es el nombre normalizado). |
+| `horarios/{horarioId}` | Profesor, materia, intervalo, modalidad (presencial o virtual), lugar o enlace, disponibilidad e historial | Miembros verificados leen; las reglas permiten a los profesores publicar/eliminar y a estudiantes reservar según el flujo. |
 | `reservas/{reservaId}` | Horario, participantes, materia, fechas y estado | Solo los participantes leen; las escrituras válidas se hacen en transacciones del cliente. |
 
 El registro exige correo institucional `@uao.edu.co` verificado. La app crea el perfil como estudiante. Para habilitar un profesor, verifica su cuenta, inicia sesión para crear sus perfiles y luego asigna `rol: "profesor"` en `perfiles/{uid}`; añade los documentos de materias en la subcolección `asignaturas`. La consola Firebase administra estos datos con privilegios del proyecto.

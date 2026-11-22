@@ -50,7 +50,7 @@ service cloud.firestore {
 
     function validSlot(data) {
       return data is map
-        && hasOnly(data, ['profesorId', 'profesorNombre', 'asignaturaId', 'asignaturaNombre', 'inicio', 'fin', 'reservado', 'tieneHistorial', 'activo', 'creadoEn', 'reservaId'])
+        && hasOnly(data, ['profesorId', 'profesorNombre', 'asignaturaId', 'asignaturaNombre', 'inicio', 'fin', 'reservado', 'tieneHistorial', 'activo', 'creadoEn', 'reservaId', 'modalidad', 'lugar'])
         && data.keys().hasAll(['profesorId', 'profesorNombre', 'asignaturaId', 'asignaturaNombre', 'inicio', 'fin', 'reservado', 'tieneHistorial', 'activo', 'creadoEn'])
         && data.profesorId is string && data.profesorId.size() <= 128
         && validName(data.profesorNombre, 3, 100)
@@ -61,6 +61,8 @@ service cloud.firestore {
         && data.fin <= data.inicio + duration.value(2, 'h')
         && data.reservado is bool && data.tieneHistorial is bool
         && data.activo is bool && data.activo == true
+        && (!('modalidad' in data) || data.modalidad in ['presencial', 'virtual'])
+        && (!('lugar' in data) || validName(data.lugar, 1, 120))
         && data.creadoEn is timestamp;
     }
 
@@ -70,7 +72,7 @@ service cloud.firestore {
 
     function validBooking(data) {
       return data is map
-        && hasOnly(data, ['horarioId', 'estudianteId', 'estudianteNombre', 'profesorId', 'profesorNombre', 'asignaturaId', 'asignaturaNombre', 'inicio', 'fin', 'estado', 'motivo', 'ocultaEstudiante', 'ocultaProfesor', 'creadaEn', 'actualizadaEn'])
+        && hasOnly(data, ['horarioId', 'estudianteId', 'estudianteNombre', 'profesorId', 'profesorNombre', 'asignaturaId', 'asignaturaNombre', 'inicio', 'fin', 'estado', 'motivo', 'ocultaEstudiante', 'ocultaProfesor', 'modalidad', 'lugar', 'creadaEn', 'actualizadaEn'])
         && data.keys().hasAll(['horarioId', 'estudianteId', 'estudianteNombre', 'profesorId', 'profesorNombre', 'asignaturaId', 'asignaturaNombre', 'inicio', 'fin', 'estado', 'creadaEn', 'actualizadaEn'])
         && data.horarioId is string && data.horarioId.size() <= 150
         && data.estudianteId is string && data.estudianteId.size() <= 128
@@ -84,6 +86,8 @@ service cloud.firestore {
         && (!('motivo' in data) || validName(data.motivo, 3, 300))
         && (!('ocultaEstudiante' in data) || data.ocultaEstudiante is bool)
         && (!('ocultaProfesor' in data) || data.ocultaProfesor is bool)
+        && (!('modalidad' in data) || data.modalidad in ['presencial', 'virtual'])
+        && (!('lugar' in data) || validName(data.lugar, 1, 120))
         && data.creadaEn is timestamp && data.actualizadaEn is timestamp;
     }
 
@@ -109,7 +113,13 @@ service cloud.firestore {
 
       match /asignaturas/{asignaturaId} {
         allow get, list: if owns(uid);
-        allow create, update, delete: if false;
+        allow create: if owns(uid)
+          && roleIs(uid, 'profesor')
+          && request.resource.data.keys().hasOnly(['asignadaEn'])
+          && request.resource.data.asignadaEn == request.time
+          && existsAfter(/databases/$(database)/documents/asignaturas/$(asignaturaId))
+          && getAfter(/databases/$(database)/documents/asignaturas/$(asignaturaId)).data.activa == true;
+        allow update, delete: if false;
       }
 
       match /locks/horarios {
@@ -142,7 +152,16 @@ service cloud.firestore {
 
     match /asignaturas/{asignaturaId} {
       allow read: if isUniversityUser() && resource.data.activa == true;
-      allow create, update, delete: if false;
+      allow create: if isUniversityUser()
+        && roleIs(request.auth.uid, 'profesor')
+        && asignaturaId.matches('^[a-z0-9-]{1,80}$')
+        && request.resource.data.keys().hasOnly(['nombre', 'activa', 'creadaPor', 'creadoEn'])
+        && request.resource.data.keys().hasAll(['nombre', 'activa', 'creadaPor', 'creadoEn'])
+        && validName(request.resource.data.nombre, 3, 100)
+        && request.resource.data.activa == true
+        && request.resource.data.creadaPor == request.auth.uid
+        && request.resource.data.creadoEn == request.time;
+      allow update, delete: if false;
     }
 
     match /horarios/{horarioId} {
@@ -232,7 +251,9 @@ service cloud.firestore {
         && getAfter(/databases/$(database)/documents/horarios/$(request.resource.data.horarioId)).data.profesorId == request.resource.data.profesorId
         && getAfter(/databases/$(database)/documents/horarios/$(request.resource.data.horarioId)).data.asignaturaId == request.resource.data.asignaturaId
         && getAfter(/databases/$(database)/documents/horarios/$(request.resource.data.horarioId)).data.inicio == request.resource.data.inicio
-        && getAfter(/databases/$(database)/documents/horarios/$(request.resource.data.horarioId)).data.fin == request.resource.data.fin;
+        && getAfter(/databases/$(database)/documents/horarios/$(request.resource.data.horarioId)).data.fin == request.resource.data.fin
+        && getAfter(/databases/$(database)/documents/horarios/$(request.resource.data.horarioId)).data.get('modalidad', null) == request.resource.data.get('modalidad', null)
+        && getAfter(/databases/$(database)/documents/horarios/$(request.resource.data.horarioId)).data.get('lugar', null) == request.resource.data.get('lugar', null);
 
       allow update: if isUniversityUser()
         && validBooking(request.resource.data)
