@@ -5,6 +5,7 @@ import {
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { ProfileMenu } from './ProfileMenu';
+import { BrandLogo } from './BrandLogo';
 
 export function PortalLayout({ title, children }: PropsWithChildren<{ title: string }>) {
   const { profile } = useAuth();
@@ -16,7 +17,7 @@ export function PortalLayout({ title, children }: PropsWithChildren<{ title: str
     <IonPage>
       <IonHeader>
         <IonToolbar className="home-toolbar">
-          <IonTitle>Asesorías UAO</IonTitle>
+          <IonTitle><span className="toolbar-brand"><BrandLogo height={40} /><span className="toolbar-brand-text">Asesorías</span></span></IonTitle>
           <IonButtons slot="end"><ProfileMenu /></IonButtons>
         </IonToolbar>
         <IonToolbar className="portal-nav">

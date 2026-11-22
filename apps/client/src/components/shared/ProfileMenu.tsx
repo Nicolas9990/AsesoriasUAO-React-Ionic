@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { IonButton, IonItem, IonLabel, IonList, IonPopover } from '@ionic/react';
 import { useAuth } from '../../context/AuthContext';
 import { useProfilePhoto } from '../../hooks/useProfilePhoto';
@@ -9,13 +10,14 @@ function initials(name: string) {
 export function ProfileMenu() {
   const { profile, signOutUser } = useAuth();
   const { photo, saving, error, changePhoto, removePhoto } = useProfilePhoto();
+  const triggerId = `profile-trigger-${useId().replace(/\W/g, '')}`;
   return <>
-    <IonButton id="profile-trigger" className="profile-button" fill="clear">
+    <IonButton id={triggerId} className="profile-button" fill="clear">
       {photo
         ? <img className="profile-avatar" src={photo} alt="Foto de perfil" />
         : <span className="profile-avatar profile-initials">{initials(profile?.nombre ?? '') || '?'}</span>}
     </IonButton>
-    <IonPopover trigger="profile-trigger" triggerAction="click" dismissOnSelect>
+    <IonPopover trigger={triggerId} triggerAction="click" dismissOnSelect>
       <IonList lines="none">
         <IonItem>
           <IonLabel>

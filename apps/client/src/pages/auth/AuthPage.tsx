@@ -4,6 +4,7 @@ import {
 } from '@ionic/react';
 import { Link } from 'react-router-dom';
 import { useAuth, type UserRole } from '../../context/AuthContext';
+import { BrandLogo } from '../../components/shared/BrandLogo';
 
 export function AuthPage({ register = false }: { register?: boolean }) {
   const { signIn, register: createAccount, error: authError, clearError } = useAuth();
@@ -48,7 +49,7 @@ export function AuthPage({ register = false }: { register?: boolean }) {
       <IonContent fullscreen className="auth-content">
         <main className="auth-layout">
           <section className="auth-brand">
-            <div className="brand-mark">UAO</div>
+            <div className="brand-mark"><BrandLogo negative height={58} /></div>
             <p className="eyebrow">Universidad Autónoma de Occidente</p>
             <h1>Asesorías entre estudiantes y profesores.</h1>
             <p className="brand-copy">Encuentra acompañamiento académico y organiza tus espacios de asesoría desde cualquier dispositivo.</p>
