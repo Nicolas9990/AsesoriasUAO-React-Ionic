@@ -2,6 +2,14 @@ name: Deploy Firebase Hosting
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/client/**"
+      - "firebase.json"
+      - ".firebaserc"
+      - ".github/workflows/firebase-hosting-deploy.yml"
 
 permissions:
   contents: read
@@ -22,6 +30,10 @@ jobs:
 
       - name: Install client dependencies
         run: npm ci
+        working-directory: apps/client
+
+      - name: Configure Firebase client
+        run: cp .env.example .env.local
         working-directory: apps/client
 
       - name: Build web app
