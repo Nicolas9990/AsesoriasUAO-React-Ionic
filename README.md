@@ -1,99 +1,71 @@
 # Asesorías UAO
 
-Aplicación móvil y web para conectar estudiantes y profesores de la Universidad Autónoma de Occidente. Está construida con React, Ionic, Capacitor y Firebase Authentication/Cloud Firestore. El proyecto no incluye servidor propio ni Cloud Functions.
+Aplicación web y móvil para conectar estudiantes y profesores de la Universidad Autónoma de Occidente mediante asesorías académicas.
 
+## Integrantes
 
-## Estructura de la aplicación
+- Nicolas Rodriguez
+- Juan Jose Corrales
+- David Alvarez
 
-```
-apps/client/src/
-├── components/
-│   ├── advisory/       # tarjetas de horarios y reservas
-│   └── shared/         # layout y estados compartidos
-├── context/            # contexto y proveedor de autenticación
-├── helpers/            # formato de fechas y errores
-├── hooks/              # autenticación y consultas de Firestore
-├── pages/
-│   ├── auth/
-│   ├── professor/
-│   ├── student/
-│   └── system/
-├── routes/             # rutas y control de acceso por rol
-├── theme/              # estilos globales Ionic y de la app
-├── types/
-├── App.tsx
-├── firebase.ts
-└── main.tsx
-```
+## Repositorio y ramas
 
-## Requisitos
+- Repositorio: https://github.com/Nicolas9990/AsesoriasUAO-React-Ionic
+- Rama principal: [main](https://github.com/Nicolas9990/AsesoriasUAO-React-Ionic/tree/main)
+- [Rama Juan_Jose_Corrales](https://github.com/Nicolas9990/AsesoriasUAO-React-Ionic/tree/Juan_Jose_Corrales) integrada en main mediante [PR #1](https://github.com/Nicolas9990/AsesoriasUAO-React-Ionic/pull/1).
+- [Rama Rama_David](https://github.com/Nicolas9990/AsesoriasUAO-React-Ionic/tree/Rama_David) integrada en main mediante [PR #2](https://github.com/Nicolas9990/AsesoriasUAO-React-Ionic/pull/2).
+- [Rama Nicolas_Rodriguez](https://github.com/Nicolas9990/AsesoriasUAO-React-Ionic/tree/Nicolas_Rodriguez) ya estaba sincronizada con main; no tenía commits exclusivos.
 
-- Node.js 20.19+ o 22.12+. npm se instala junto con Node.js.
-- Git.
-- Firebase Authentication con correo y contraseña y Cloud Firestore para ejecutar la aplicación.
-- Android Studio para compilar Android.
+## Prototipo
 
-Comprueba las versiones desde una terminal:
+El enlace al prototipo no está incluido en el repositorio ni fue suministrado para esta entrega. Añadir aquí el enlace compartible del prototipo cuando esté disponible.
+
+## Alcance funcional
+
+La aplicación contempla autenticación por correo, navegación según el rol de estudiante o profesor, consulta de asesores y horarios, solicitudes y gestión de reservas, perfil y comunicación por chat. Incluye notificaciones locales, cámara/foto de perfil y empaquetado móvil con Capacitor para Android/iOS. Los datos de profesores y asignaturas de prueba se configuran directamente en Firestore.
+
+## Tecnologías
+
+- React 19, TypeScript 5 y Vite.
+- Ionic React e Ionicons para la interfaz.
+- Capacitor 8 y plugins de Android/iOS: cámara, hápticos y notificaciones locales.
+- Firebase Authentication y Cloud Firestore como servicios backend.
+- Android Studio/Gradle para preparar la aplicación Android.
+
+## APIs y servicios backend consumidos
+
+No se identifica un backend REST propio ni Cloud Functions. La app consume servicios Firebase mediante el SDK oficial:
+
+- **Firebase Authentication**: registro/inicio de sesión con correo y contraseña, y estado de autenticación.
+- **Cloud Firestore**: consultas y actualizaciones en tiempo real para perfiles, asesores, asignaturas, horarios, solicitudes/reservas y mensajes del chat.
+
+La configuración del proyecto Firebase se carga desde variables de entorno locales. No se publican aquí credenciales ni URLs de endpoints. Las notificaciones, cámara y hápticos son capacidades nativas del dispositivo mediante plugins de Capacitor, no APIs de backend.
+
+## Requisitos y ejecución
+
+- Node.js 20.19+ o 22.12+, npm y Git.
+- Proyecto Firebase con Authentication (correo y contraseña) y Cloud Firestore habilitados.
+- Android Studio para compilar/abrir el proyecto Android.
+
+Desde la raíz:
 
 ```bash
-node --version
-npm --version
-git --version
-```
-
-## Instalación y ejecución
-
-Las dependencias de React, Ionic, Vite, TypeScript, Capacitor y Firebase se declaran en `apps/client/package.json`. **No instales Vite, Ionic ni TypeScript globalmente.** Instálalas desde la carpeta del cliente:
-
-```bash   Entra a la carpeta desde la terminal asi 
 cd apps/client
 npm ci
 ```
 
-Configura Firebase copiando el ejemplo a un archivo local. En PowerShell:
-
-```powershell
-Copy-Item .env.example .env.local
-```
-
-En Símbolo del sistema (CMD):
-
-```bat
-copy .env.example .env.local
-```
-
-Revisa los valores de `.env.local` y reemplázalos por la configuración de tu app web de Firebase si corresponde. Ese archivo está excluido de Git; no lo subas al repositorio. (O mejor copien el .env.example y peguenlo y cambienle el nombre a .env.local y borren la informacion de .env.example)
-
-Con la terminal aún en `apps/client`, inicia el servidor de desarrollo o compila:
+Configura las variables Firebase copiando `.env.example` a `.env.local` y completando los valores de tu proyecto. Mantén `.env.local` fuera de Git. Luego, desde `apps/client`:
 
 ```bash
 npm run dev
 npm run build
 ```
 
-También puedes ejecutar ambos scripts desde la raíz del repositorio, después de instalar las dependencias:
-
-```bash
-npm run dev
-npm run build
-```
-
-## Configuración de Firebase
-
-En Firebase Console, habilita Authentication con correo y contraseña y crea Cloud Firestore. Para publicar las reglas e índices incluidos en el proyecto, autentícate con Firebase CLI y ejecuta desde la raíz:
-
-```bash
-npx -y firebase-tools@latest login
-npx -y firebase-tools@latest deploy --only firestore --project asesoriasuao
-```
-
-Los profesores y las asignaturas de prueba se configuran en Firestore Console; la app no incluye panel de administración ni Cloud Functions.
-
-## Aplicación móvil
-
-Para preparar y abrir Android Studio, ejecuta desde la raíz:
+Para sincronizar y abrir Android desde la raíz:
 
 ```bash
 npm run cap:sync
 npm run cap:android
 ```
+
+Consulta [docs/alcance-y-tecnologias.md](docs/alcance-y-tecnologias.md) para el documento final de alcance.
