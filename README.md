@@ -16,6 +16,10 @@ Aplicación web y móvil para conectar estudiantes y profesores de la Universida
 - [Rama Rama_David](https://github.com/Nicolas9990/AsesoriasUAO-React-Ionic/tree/Rama_David) integrada en main mediante [PR #2](https://github.com/Nicolas9990/AsesoriasUAO-React-Ionic/pull/2).
 - [Rama Nicolas_Rodriguez](https://github.com/Nicolas9990/AsesoriasUAO-React-Ionic/tree/Nicolas_Rodriguez) ya estaba sincronizada con main; no tenía commits exclusivos.
 
+## Aplicación publicada
+
+- [Abrir Asesorías UAO](https://asesoriasuao.web.app/) (Firebase Hosting).
+
 ## Prototipo
 
 El enlace al prototipo no está incluido en el repositorio ni fue suministrado para esta entrega. Añadir aquí el enlace compartible del prototipo cuando esté disponible.
