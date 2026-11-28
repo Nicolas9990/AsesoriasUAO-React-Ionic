@@ -15,6 +15,9 @@ import type { Slot, Subject } from '../../types/advisory';
 import { InlineState } from '../../components/shared/InlineState';
 import { PortalLayout } from '../../components/shared/PortalLayout';
 import { SlotCard } from '../../components/advisory/SlotCard';
+import { FilterTabs, type FilterOption } from '../../components/shared/FilterTabs';
+
+type ScheduleFilter = 'todos' | 'disponibles' | 'reservados';
 
 export function ManageSchedulesPage() {
   const { user } = useAuth();
@@ -50,6 +53,14 @@ export function ManageSchedulesPage() {
 
   const constraints = useMemo(() => user ? [where('profesorId', '==', user.uid), where('inicio', '>=', Timestamp.now()), orderBy('inicio'), limit(100)] : [], [user?.uid]);
   const { items: slots, loading, error } = useLiveList<Slot>('horarios', constraints, toSlot);
+  const [filter, setFilter] = useState<ScheduleFilter>('todos');
+  const reservedCount = slots.filter((slot) => slot.reservado).length;
+  const visibleSlots = filter === 'todos' ? slots : slots.filter((slot) => slot.reservado === (filter === 'reservados'));
+  const options: FilterOption<ScheduleFilter>[] = [
+    { value: 'todos', label: 'Todos', count: slots.length, color: 'dark' },
+    { value: 'disponibles', label: 'Disponibles', count: slots.length - reservedCount, color: 'success' },
+    { value: 'reservados', label: 'Reservados', count: reservedCount, color: 'warning' },
+  ];
 
   async function createSchedule() {
     if (!db || !user || !subjectId || !date || !time) { setNotice('Selecciona una asignatura, fecha y hora.'); return; }
@@ -164,9 +175,11 @@ export function ManageSchedulesPage() {
     </section>
     {notice && <InlineState>{notice}</InlineState>}
     <h2 className="section-heading">Próximos horarios</h2>
+    <FilterTabs options={options} value={filter} onChange={setFilter} />
     {loading && <IonLoading isOpen message="Cargando horarios…" />}{error && <InlineState danger>No se pudieron cargar tus horarios: {error}</InlineState>}
     {!loading && !error && slots.length === 0 && <InlineState>No tienes horarios próximos publicados.</InlineState>}
-    <div className="portal-grid">{slots.map((slot) => <SlotCard key={slot.id} slot={slot} action={<>
+    {!loading && !error && slots.length > 0 && visibleSlots.length === 0 && <InlineState>No hay horarios en esta categoría.</InlineState>}
+    <div className="portal-grid">{visibleSlots.map((slot) => <SlotCard key={slot.id} slot={slot} action={<>
       {slot.reservado ? <IonBadge color="warning">Reservado</IonBadge> : <IonBadge color="success">Disponible</IonBadge>}
       {!slot.reservado && !slot.tieneHistorial && <IonButton fill="outline" color="danger" disabled={busy} onClick={() => void removeSchedule(slot)}>{busy ? 'Eliminando…' : 'Eliminar horario'}</IonButton>}
     </>} />)}</div>

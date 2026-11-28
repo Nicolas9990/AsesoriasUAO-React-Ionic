@@ -5,12 +5,12 @@ import { useAuth } from '../context/AuthContext';
 import type { UserRole } from '../context/AuthContext';
 import { ProfilePendingPage } from '../pages/auth/ProfilePendingPage';
 
-export function UserRoutes({ role, children }: { role: UserRole; children: ReactNode }) {
+export function UserRoutes({ role, children }: { role: UserRole | UserRole[]; children: ReactNode }) {
   const { profile, user, loading } = useAuth();
   if (loading) return <IonPage><IonContent><IonLoading isOpen message="Cargando…" /></IonContent></IonPage>;
   if (!user) return <Navigate to="/login" replace />;
   if (!profile) return <ProfilePendingPage />;
-  if (profile.rol !== role) return <Navigate to="/" replace />;
+  if (!(Array.isArray(role) ? role : [role]).includes(profile.rol)) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
