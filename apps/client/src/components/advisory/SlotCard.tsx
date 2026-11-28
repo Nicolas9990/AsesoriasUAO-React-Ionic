@@ -10,6 +10,8 @@ export function SlotCard({ slot, action }: { slot: Slot; action: ReactNode }) {
   </IonCardHeader><IonCardContent>
     <p>Profesor: {slot.profesorNombre}</p>
     <p>Duración: {Math.round((slot.fin.toMillis() - slot.inicio.toMillis()) / 60000)} minutos</p>
+    {slot.modalidad && <p>Modalidad: {slot.modalidad === 'virtual' ? 'Virtual' : 'Presencial'}</p>}
+    {slot.lugar && <p>{slot.modalidad === 'virtual' ? 'Enlace o plataforma' : 'Lugar'}: {slot.lugar}</p>}
     {action}
   </IonCardContent></IonCard>;
 }

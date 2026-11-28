@@ -1,15 +1,17 @@
 import { useState, type FormEvent } from 'react';
 import {
-  IonButton, IonContent, IonInput, IonItem, IonLoading, IonPage, IonText,
+  IonButton, IonContent, IonInput, IonItem, IonLoading, IonPage, IonSegment, IonSegmentButton, IonLabel, IonText,
 } from '@ionic/react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth, type UserRole } from '../../context/AuthContext';
+import { BrandLogo } from '../../components/shared/BrandLogo';
 
 export function AuthPage({ register = false }: { register?: boolean }) {
   const { signIn, register: createAccount, error: authError, clearError } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState<UserRole>('estudiante');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -34,7 +36,7 @@ export function AuthPage({ register = false }: { register?: boolean }) {
         await createAccount(name, normalizedEmail, password);
         setMessage('Te enviamos un enlace para confirmar tu correo institucional.');
       }
-      else await signIn(normalizedEmail, password);
+      else await signIn(normalizedEmail, password, role);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'No se pudo completar la solicitud.');
     } finally {
@@ -47,7 +49,7 @@ export function AuthPage({ register = false }: { register?: boolean }) {
       <IonContent fullscreen className="auth-content">
         <main className="auth-layout">
           <section className="auth-brand">
-            <div className="brand-mark">UAO</div>
+            <div className="brand-mark"><BrandLogo negative height={58} /></div>
             <p className="eyebrow">Universidad Autónoma de Occidente</p>
             <h1>Asesorías entre estudiantes y profesores.</h1>
             <p className="brand-copy">Encuentra acompañamiento académico y organiza tus espacios de asesoría desde cualquier dispositivo.</p>
@@ -59,6 +61,10 @@ export function AuthPage({ register = false }: { register?: boolean }) {
               <p>{register ? 'Regístrate como estudiante para comenzar.' : 'Ingresa para gestionar tus asesorías.'}</p>
             </div>
             <form onSubmit={submit}>
+              {!register && <IonSegment value={role} onIonChange={(e) => setRole(e.detail.value === 'profesor' ? 'profesor' : 'estudiante')}>
+                <IonSegmentButton value="estudiante"><IonLabel>Estudiante</IonLabel></IonSegmentButton>
+                <IonSegmentButton value="profesor"><IonLabel>Profesor</IonLabel></IonSegmentButton>
+              </IonSegment>}
               {register && <IonItem className="form-item"><IonInput label="Nombre completo" labelPlacement="stacked" autocomplete="name" value={name} onIonInput={(e) => setName(e.detail.value ?? '')} required minlength={3} maxlength={100} /></IonItem>}
               <IonItem className="form-item"><IonInput label="Correo institucional" labelPlacement="stacked" type="email" autocomplete="email" value={email} onIonInput={(e) => setEmail(e.detail.value ?? '')} required /></IonItem>
               <IonItem className="form-item"><IonInput label="Contraseña" labelPlacement="stacked" type="password" autocomplete={register ? 'new-password' : 'current-password'} value={password} onIonInput={(e) => setPassword(e.detail.value ?? '')} required minlength={8} /></IonItem>

@@ -1,5 +1,5 @@
 import {
-  createContext, useCallback, useContext, useEffect, useMemo, useState,
+  createContext, useCallback, useContext, useEffect, useMemo, useRef, useState,
   type ReactNode,
 } from 'react';
 import {
@@ -25,7 +25,7 @@ export interface AuthContextValue {
   loading: boolean;
   verificationPending: boolean;
   error: string;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string, role?: UserRole) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   resendVerification: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -42,6 +42,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [verificationPending, setVerificationPending] = useState(false);
   const [error, setError] = useState('');
+  const expectedRole = useRef<UserRole | null>(null);
+  const roleMismatch = useRef('');
 
   const loadProfile = useCallback(async (currentUser: User) => {
     if (!db) return;
@@ -63,7 +65,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const publicProfileRef = doc(db, 'perfilesPublicos', currentUser.uid);
       const snapshot = await getDoc(profileRef);
 
+      const expected = expectedRole.current;
+      expectedRole.current = null;
+      const rejectRole = async (actual: UserRole) => {
+        roleMismatch.current = `Tu cuenta es de ${actual}, no de ${expected}. Elige el rol correcto para ingresar.`;
+        if (auth) await signOut(auth);
+      };
+
       if (!snapshot.exists()) {
+        if (expected === 'profesor') { await rejectRole('estudiante'); return; }
         const nombre = currentUser.displayName?.trim() ?? '';
         if (nombre.length < 3 || !currentUser.email) {
           setError('No fue posible crear un perfil válido para esta cuenta.');
@@ -100,6 +110,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      if (expected && data.rol !== expected) { await rejectRole(data.rol); return; }
+
       setProfile({
         uid: currentUser.uid,
         nombre: String(data.nombre ?? currentUser.displayName ?? ''),
@@ -124,7 +136,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
         setProfile(null);
         setVerificationPending(false);
-        setError('');
+        setError(roleMismatch.current);
+        roleMismatch.current = '';
         setLoading(false);
         return;
       }
@@ -139,9 +152,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     verificationPending,
     error,
     clearError: () => setError(''),
-    signIn: async (email, password) => {
+    signIn: async (email, password, role) => {
       if (!auth) throw new Error('Completa la configuración de Firebase.');
       setError('');
+      expectedRole.current = role ?? null;
       await signInWithEmailAndPassword(auth, email.trim(), password);
     },
     register: async (name, email, password) => {

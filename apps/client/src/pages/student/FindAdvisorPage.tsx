@@ -77,6 +77,8 @@ export function FindAdvisorPage() {
           asignaturaNombre: current.asignaturaNombre,
           inicio: current.inicio,
           fin: current.fin,
+          ...(current.modalidad ? { modalidad: current.modalidad } : {}),
+          ...(current.lugar ? { lugar: current.lugar } : {}),
           estado: 'pendiente',
           creadaEn: serverTimestamp(),
           actualizadaEn: serverTimestamp(),

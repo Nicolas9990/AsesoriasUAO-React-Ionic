@@ -19,7 +19,10 @@ export function BookingCard({ booking, role, actions, onDismiss }: { booking: Bo
     <IonCardSubtitle>{booking.asignaturaNombre}</IonCardSubtitle>
     <IonCardTitle>{formatDate(booking.inicio)}</IonCardTitle>
   </IonCardHeader><IonCardContent>
-    <p>{counterpart}</p><p>Estado: <StatusBadge status={booking.estado} /></p>
+    <p>{counterpart}</p>
+    {booking.modalidad && <p>Modalidad: {booking.modalidad === 'virtual' ? 'Virtual' : 'Presencial'}</p>}
+    {booking.lugar && <p>{booking.modalidad === 'virtual' ? 'Enlace o plataforma' : 'Lugar'}: {booking.lugar}</p>}
+    <p>Estado: <StatusBadge status={booking.estado} /></p>
     {booking.estado === 'cancelada' && booking.motivo && <p className="booking-reason"><strong>Justificación:</strong> {booking.motivo}</p>}
     <IonButton fill="outline" routerLink={`/chat/${booking.id}`}>Chat</IonButton>
     {actions}

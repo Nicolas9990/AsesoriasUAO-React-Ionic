@@ -4,14 +4,15 @@ import {
 } from '@ionic/react';
 import {
   Timestamp, collection, doc, getDoc, getDocs, limit, orderBy,
-  runTransaction, serverTimestamp, where,
+  query, runTransaction, serverTimestamp, where, writeBatch,
 } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useAuth } from '../../context/AuthContext';
 import { useLiveList, toSlot } from '../../hooks/useAdvisoryData';
 import { dateTimeInBogota, todayInBogota } from '../../helpers/date';
 import { errorMessage } from '../../helpers/errors';
-import type { Slot, Subject } from '../../types/advisory';
+import { subjectSlug } from '../../helpers/subjects';
+import type { Modality, Slot, Subject } from '../../types/advisory';
 import { InlineState } from '../../components/shared/InlineState';
 import { PortalLayout } from '../../components/shared/PortalLayout';
 import { SlotCard } from '../../components/advisory/SlotCard';
@@ -30,6 +31,11 @@ export function ManageSchedulesPage() {
   const [duration, setDuration] = useState(60);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
+  const [modality, setModality] = useState<Modality>('presencial');
+  const [place, setPlace] = useState('');
+  const [newSubject, setNewSubject] = useState('');
+  const [addingSubject, setAddingSubject] = useState(false);
+  const [subjectsVersion, setSubjectsVersion] = useState(0);
 
   useEffect(() => {
     if (!db || !user) return;
@@ -49,7 +55,7 @@ export function ManageSchedulesPage() {
     }
     void loadAssignedSubjects();
     return () => { active = false; };
-  }, [user?.uid]);
+  }, [user?.uid, subjectsVersion]);
 
   const constraints = useMemo(() => user ? [where('profesorId', '==', user.uid), where('inicio', '>=', Timestamp.now()), orderBy('inicio'), limit(100)] : [], [user?.uid]);
   const { items: slots, loading, error } = useLiveList<Slot>('horarios', constraints, toSlot);
@@ -62,8 +68,38 @@ export function ManageSchedulesPage() {
     { value: 'reservados', label: 'Reservados', count: reservedCount, color: 'warning' },
   ];
 
+  async function addSubject() {
+    if (!db || !user) return;
+    const firestore = db;
+    const currentUser = user;
+    const name = newSubject.trim().replace(/\s+/g, ' ');
+    const slug = subjectSlug(name);
+    if (name.length < 3 || name.length > 100 || !slug) { setNotice('Escribe el nombre de la materia (entre 3 y 100 caracteres).'); return; }
+    setAddingSubject(true); setNotice('');
+    try {
+      const catalog = await getDocs(query(collection(firestore, 'asignaturas'), where('activa', '==', true)));
+      const match = catalog.docs.find((item) => item.id === slug || subjectSlug(String(item.get('nombre') ?? '')) === slug);
+      const targetId = match?.id ?? slug;
+      if (subjects.some((item) => item.id === targetId)) { setNotice('Esa materia ya está en tu perfil.'); return; }
+      const batch = writeBatch(firestore);
+      if (!match) {
+        batch.set(doc(firestore, 'asignaturas', targetId), {
+          nombre: name, activa: true, creadaPor: currentUser.uid, creadoEn: serverTimestamp(),
+        });
+      }
+      batch.set(doc(firestore, 'perfiles', currentUser.uid, 'asignaturas', targetId), { asignadaEn: serverTimestamp() });
+      await batch.commit();
+      setNotice(match ? 'La materia ya existía y se agregó a tu perfil.' : 'Materia creada y agregada a tu perfil.');
+      setNewSubject('');
+      setSubjectsVersion((value) => value + 1);
+    } catch (cause) { setNotice(errorMessage(cause)); }
+    finally { setAddingSubject(false); }
+  }
+
   async function createSchedule() {
     if (!db || !user || !subjectId || !date || !time) { setNotice('Selecciona una asignatura, fecha y hora.'); return; }
+    const placeText = place.trim();
+    if (placeText.length < 1 || placeText.length > 120) { setNotice(modality === 'virtual' ? 'Indica el enlace o la plataforma de la asesoría.' : 'Indica el lugar de la asesoría.'); return; }
     const firestore = db;
     const currentUser = user;
     const start = dateTimeInBogota(date, time);
@@ -114,6 +150,8 @@ export function ManageSchedulesPage() {
           fin: endTimestamp,
           reservado: false,
           tieneHistorial: false,
+          modalidad: modality,
+          lugar: placeText,
           activo: true,
           creadoEn: serverTimestamp(),
         });
@@ -157,8 +195,15 @@ export function ManageSchedulesPage() {
   return <PortalLayout title="Mis horarios">
     <p className="portal-lede">Publica los espacios disponibles para las asignaturas que tienes asignadas.</p>
     <section className="schedule-form">
+      <h2>Mis materias</h2>
+      <div className="filter-card">
+        <IonItem><IonInput label="Nueva materia" labelPlacement="stacked" placeholder="Ej. Cálculo diferencial" maxlength={100} value={newSubject} onIonInput={(e) => setNewSubject(String(e.detail.value ?? ''))} /></IonItem>
+      </div>
+      <IonButton className="form-submit" disabled={addingSubject || newSubject.trim().length < 3} onClick={() => void addSubject()}>{addingSubject ? 'Agregando…' : 'Agregar materia'}</IonButton>
+    </section>
+    <section className="schedule-form">
       <h2>Publicar un horario</h2>
-      {subjectsLoading ? <InlineState>Cargando tus asignaturas…</InlineState> : subjects.length === 0 ? <InlineState danger>No tienes asignaturas activas asignadas. Solicita al administrador que habilite tus materias.</InlineState> : <>
+      {subjectsLoading ? <InlineState>Cargando tus asignaturas…</InlineState> : subjects.length === 0 ? <InlineState>Aún no tienes materias. Agrega una arriba para poder publicar horarios.</InlineState> : <>
         <div className="filter-card">
           <IonItem><IonSelect label="Asignatura" labelPlacement="stacked" value={subjectId} onIonChange={(e) => setSubjectId(e.detail.value ?? '')} interface="popover">
             {subjects.map((subject) => <IonSelectOption key={subject.id} value={subject.id}>{subject.nombre}</IonSelectOption>)}
@@ -168,6 +213,11 @@ export function ManageSchedulesPage() {
           <IonItem><IonSelect label="Duración" labelPlacement="stacked" value={duration} onIonChange={(e) => setDuration(Number(e.detail.value))} interface="popover">
             {[30, 45, 60, 90, 120].map((minutes) => <IonSelectOption key={minutes} value={minutes}>{minutes} minutos</IonSelectOption>)}
           </IonSelect></IonItem>
+          <IonItem><IonSelect label="Modalidad" labelPlacement="stacked" value={modality} onIonChange={(e) => setModality(e.detail.value === 'virtual' ? 'virtual' : 'presencial')} interface="popover">
+            <IonSelectOption value="presencial">Presencial</IonSelectOption>
+            <IonSelectOption value="virtual">Virtual</IonSelectOption>
+          </IonSelect></IonItem>
+          <IonItem><IonInput label={modality === 'virtual' ? 'Enlace o plataforma' : 'Lugar'} labelPlacement="stacked" placeholder={modality === 'virtual' ? 'Ej. Enlace de Teams' : 'Ej. Salón 3223'} maxlength={120} value={place} onIonInput={(e) => setPlace(String(e.detail.value ?? ''))} /></IonItem>
         </div>
         <IonButton className="form-submit" disabled={busy} onClick={() => void createSchedule()}>{busy ? 'Guardando…' : 'Publicar horario'}</IonButton>
       </>}
